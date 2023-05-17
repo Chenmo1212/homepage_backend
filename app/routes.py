@@ -45,11 +45,11 @@ def delete():
         data = request.json
         count = mongo.db.messages.delete_one({'content': "3333333"})
         if count.deleted_count == 1:
-            return jsonify({'msg': 'Message deleted successfully'}), 200
+            return jsonify({'msg': 'Message deleted successfully', 'status': '200'})
         else:
-            return jsonify({'msg': 'Cannot find this id: ' + data['id']}), 201
+            return jsonify({'msg': 'Cannot find this id: ' + data['id'], 'status': '201'})
     except Exception as e:
-        return jsonify({'msg': 'Failed to delete message. ' + str(e)}), 500
+        return jsonify({'msg': 'Failed to delete message. ' + str(e), 'status': '500'})
 
 
 def add_new_message(req):
@@ -64,11 +64,11 @@ def add_new_message(req):
         if name and email and content:
             message = Message(name=name, email=email, website=website, content=content, agent=agent)
             message.save()
-            return jsonify({'message': 'Message created successfully'}), 200
+            return jsonify({'msg': 'Message created successfully', 'status': '200'})
         else:
-            return jsonify({'error': 'Missing required fields'}), 400
+            return jsonify({'msg': 'Missing required fields', 'status': '400'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'msg': str(e), 'status': '400'})
 
 
 def get_visible_list():
@@ -84,7 +84,7 @@ def get_visible_list():
             message_list.append(message_dict)
         return jsonify(message_list)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'msg': str(e), 'status': '400'})
 
 
 def get_all_messages():
@@ -107,9 +107,9 @@ def get_all_messages():
                 'delete_time': message['delete_time'],
             }
             message_list.append(message_dict)
-        return jsonify(message_list)
+        return jsonify({'data': message_list, 'status': '200'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'msg': str(e), 'status': '500'})
 
 
 def update_is_show(req):
@@ -127,11 +127,11 @@ def update_is_show(req):
         )
 
         if obj["is_show"]:
-            return jsonify({'msg': 'Approve the message successfully'}), 200
+            return jsonify({'msg': 'Approve the message successfully', 'status': '200'})
         else:
-            return jsonify({'msg': 'Withdraw approval message successfully'}), 200
+            return jsonify({'msg': 'Withdraw approval message successfully', 'status': '201'})
     except Exception as e:
-        return jsonify({'msg': 'Failed to approve message. ' + str(e)}), 500
+        return jsonify({'msg': 'Failed to approve message. ' + str(e), 'status': '500'})
 
 
 def update_is_delete(req):
@@ -148,9 +148,9 @@ def update_is_delete(req):
             }
         )
         if obj["is_delete"]:
-            return jsonify({'msg': 'Delete the message successfully'}), 200
+            return jsonify({'msg': 'Delete the message successfully', 'status': '200'})
         else:
-            return jsonify({'msg': 'Withdraw delete message successfully'}), 200
+            return jsonify({'msg': 'Withdraw delete message successfully', 'status': '201'})
     except Exception as e:
-        return jsonify({'msg': 'Failed to dismiss message. ' + str(e)}), 500
+        return jsonify({'msg': 'Failed to dismiss message. ' + str(e), 'status': '500'})
 
