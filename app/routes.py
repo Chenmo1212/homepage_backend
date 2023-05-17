@@ -79,7 +79,8 @@ def get_visible_list():
             message_dict = {
                 'name': message['name'],
                 'email': message['email'],
-                'content': message['content']
+                'content': message['content'],
+                'create_time': message['create_time'],
             }
             message_list.append(message_dict)
         return jsonify({'data': message_list, 'status': 200})
