@@ -42,9 +42,12 @@ def admin_disagree():
 @main.route('/message/delete', methods=['POST'])
 def delete():
     try:
-        mongo.db.messages.delete_many({'is_show': 1})
-        return jsonify({'msg': 'Message deleted successfully'}), 200
-
+        data = request.json
+        count = mongo.db.messages.delete_one({'content': "3333333"})
+        if count.deleted_count == 1:
+            return jsonify({'msg': 'Message deleted successfully'}), 200
+        else:
+            return jsonify({'msg': 'Cannot find this id: ' + data['id']}), 201
     except Exception as e:
         return jsonify({'msg': 'Failed to delete message. ' + str(e)}), 500
 
@@ -79,7 +82,6 @@ def get_visible_list():
                 'content': message['content']
             }
             message_list.append(message_dict)
-        message_list = get_visible_list()
         return jsonify(message_list)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
