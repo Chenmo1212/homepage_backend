@@ -2,11 +2,11 @@ from flask import Flask
 from flask_pymongo import PyMongo
 
 
-main = Flask(__name__)
+app = Flask(__name__)
 # app.config.from_object(config)
-main.config['MONGO_URI'] = 'mongodb://localhost:27017/Messages'
-main.debug = True
+app.config['MONGO_URI'] = 'mongodb://localhost:27017/Messages'
+app.debug = True
 
-mongo = PyMongo(main)
+mongo = PyMongo(app)
 
 from app import routes

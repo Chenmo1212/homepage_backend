@@ -27,7 +27,6 @@ class Message:
         })
 
     def delete(self):
-        print(self['id'])
         mongo.db.messages.delete_one({'_id': self['id']})
 
     @staticmethod

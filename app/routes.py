@@ -1,46 +1,47 @@
 from flask import jsonify, request
-from app import main, mongo
+from app import app, mongo
 from app.models import Message
 from datetime import datetime
 import requests, json
+from bson import ObjectId
 
 
-@main.route('/', methods=['GET'])
+@app.route('/', methods=['GET'])
 def index():
     return "hello world"
 
 
-@main.route('/message/post', methods=['POST'])
+@app.route('/message/post', methods=['POST'])
 def post():
     res = add_new_message(request)
     return jsonify(res)
 
 
-@main.route('/message/get', methods=['GET'])
+@app.route('/message/get', methods=['GET'])
 def get():
     res = get_visible_list()
     return jsonify(res)
 
 
-@main.route('/message/admin/get', methods=['GET'])
+@app.route('/message/admin/get', methods=['GET'])
 def admin_get():
     res = get_all_messages()
     return jsonify(res)
 
 
-@main.route('/message/admin/show', methods=['POST'])
+@app.route('/message/admin/show', methods=['POST'])
 def admin_agree():
     res = update_is_show(request)
     return jsonify(res)
 
 
-@main.route('/message/admin/delete', methods=['POST'])
+@app.route('/message/admin/delete', methods=['POST'])
 def admin_disagree():
     res = update_is_delete(request)
     return jsonify(res)
 
 
-@main.route('/message/delete', methods=['POST'])
+@app.route('/message/delete', methods=['POST'])
 def delete():
     try:
         data = request.json
@@ -125,8 +126,8 @@ def get_all_messages():
 def update_is_show(req):
     try:
         obj = req.json
-        mongo.db.messages.update_one(
-            {'id': obj["id"]},
+        result = mongo.db.messages.update_one(
+            {'_id': ObjectId(obj["id"])},
             {
                 '$set': {
                     "is_show": obj["is_show"],
@@ -136,10 +137,16 @@ def update_is_show(req):
             }
         )
 
-        if obj["is_show"]:
-            return {'msg': 'Approve the message successfully', 'status': 200}
+        if result.matched_count > 0:
+            # Document matched and updated successfully
+            if obj["is_show"]:
+                return {'msg': 'Approve the message successfully', 'status': 200}
+            else:
+                return {'msg': 'Withdraw approval message successfully', 'status': 200}
         else:
-            return {'msg': 'Withdraw approval message successfully', 'status': 200}
+            # No document matched the given criteria
+            return {'msg': 'No document found to update', 'status': 401}
+
     except Exception as e:
         return {'msg': 'Failed to approve message. ' + str(e), 'status': 500}
 
@@ -147,8 +154,8 @@ def update_is_show(req):
 def update_is_delete(req):
     try:
         obj = req.json
-        mongo.db.messages.update_one(
-            {'id': obj["id"]},
+        result = mongo.db.messages.update_one(
+            {'_id': ObjectId(obj["id"])},
             {
                 '$set': {
                     "is_delete": obj["is_delete"],
@@ -157,10 +164,16 @@ def update_is_delete(req):
                 }
             }
         )
-        if obj["is_delete"]:
-            return {'msg': 'Delete the message successfully', 'status': 200}
+
+        if result.matched_count > 0:
+            # Document matched and updated successfully
+            if obj["is_delete"]:
+                return {'msg': 'Delete the message successfully', 'status': 200}
+            else:
+                return {'msg': 'Withdraw delete message successfully', 'status': 200}
         else:
-            return {'msg': 'Withdraw delete message successfully', 'status': 200}
+            # No document matched the given criteria
+            return {'msg': 'No document found to update', 'status': 401}
     except Exception as e:
         return {'msg': 'Failed to dismiss message. ' + str(e), 'status': 500}
 
