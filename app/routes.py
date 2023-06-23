@@ -4,6 +4,11 @@ from app.models import Message
 from datetime import datetime
 import requests, json
 from bson import ObjectId
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 @app.route('/', methods=['GET'])
@@ -192,9 +197,9 @@ def delete_message(message_id):
 
 def post_wx(obj):
     try:
-        CORPID = 'ww09de43a6da48f6a4'  # 企业id
-        AGENTID = '1000006'  # 应用id
-        CORPSECRET = 'A_Wtv3PFqgUHDnqV93HcCzsLQuLGUjRjkQMDaAUcb8w'  # 应用secret
+        CORPID = os.getenv('CORPID')  # enterprise id
+        AGENTID = os.getenv('AGENTID')  # application id
+        CORPSECRET = os.getenv('CORPSECRET')  # application secret
 
         get_token_url = f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={CORPID}&corpsecret={CORPSECRET}"
         response = requests.get(get_token_url).content
@@ -207,10 +212,10 @@ def post_wx(obj):
                 "agentid": AGENTID,
                 "msgtype": "textcard",
                 "textcard": {
-                    "title": "主页留言",
+                    "title": "Home message",
                     "description": obj['content'],
-                    "url": "https://chenmo1212.cn/admin",
-                    "btntxt": "查看更多"
+                    "url": os.getenv('ADMINURL'),
+                    "btntxt": "More"
                 },
                 "enable_id_trans": 0,
                 "enable_duplicate_check": 0,

@@ -1,2 +1,4 @@
 .idea/*
 __pyche__
+.env
+backup.json
