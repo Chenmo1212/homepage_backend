@@ -2,3 +2,4 @@
 __pyche__
 .env
 backup.json
+config_development.py

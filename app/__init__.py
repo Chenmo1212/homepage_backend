@@ -3,12 +3,12 @@ from flask_pymongo import PyMongo
 
 
 app = Flask(__name__)
-# app.config.from_object(config)
 
-# Development
-# app.config['MONGO_URI'] = 'mongodb://localhost:27017/Messages_test'
-# Production
-app.config['MONGO_URI'] = 'mongodb://localhost:27017/Messages'
+# Load the appropriate configuration based on the environment
+if app.env == 'production':
+    app.config.from_object('config_production')
+else:
+    app.config.from_object('config_development')
 
 app.debug = True
 
