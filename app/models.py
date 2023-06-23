@@ -12,7 +12,7 @@ class Message:
         self.agent = agent
 
     def save(self):
-        mongo.db.messages.insert_one({
+        result = mongo.db.messages.insert_one({
             'name': self.name,
             'email': self.email,
             'website': self.website,
@@ -22,9 +22,12 @@ class Message:
             'update_time': datetime.now(),
             'admin_time': datetime.now(),
             'delete_time': datetime.now(),
-            'is_delete': 0,
-            'is_show': 1
+            'is_delete': False,
+            'is_show': False
         })
+        inserted_id = str(result.inserted_id)
+
+        return inserted_id
 
     def delete(self):
         mongo.db.messages.delete_one({'_id': self['id']})
@@ -34,6 +37,6 @@ class Message:
         return mongo.db.messages.find()
 
     @staticmethod
-    def get_all_show():
-        return mongo.db.messages.find({'is_show': 1})
+    def get_visible_list():
+        return mongo.db.messages.find({'is_show': True})
 
