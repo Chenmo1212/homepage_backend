@@ -6,9 +6,9 @@ app = Flask(__name__)
 # app.config.from_object(config)
 
 # Development
-app.config['MONGO_URI'] = 'mongodb://localhost:27017/Messages_test'
+# app.config['MONGO_URI'] = 'mongodb://localhost:27017/Messages_test'
 # Production
-# app.config['MONGO_URI'] = 'mongodb://localhost:27017/Messages'
+app.config['MONGO_URI'] = 'mongodb://localhost:27017/Messages'
 
 app.debug = True
 

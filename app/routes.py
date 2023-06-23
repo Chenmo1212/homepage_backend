@@ -75,19 +75,31 @@ def get_visible_list():
 def add_new_message():
     try:
         data = request.json
-        name = data.get('name')
-        email = data.get('email')
-        content = data.get('content')
-        website = data.get('website') or ""
-        agent = data.get('agent') or ""
 
-        if name and email and content:
-            message = Message(name=name, email=email, website=website, content=content, agent=agent)
+        required_fields = ['name', 'email', 'content']
+        extracted_fields = {field: data.get(field, '') for field in required_fields}
+
+        additional_fields = {
+            'website': data.get('website', ''),
+            'agent': data.get('agent', ''),
+            'admin_time': data.get('admin_time'),
+            'create_time': data.get('create_time'),
+            'delete_time': data.get('delete_time'),
+            'update_time': data.get('update_time'),
+            'is_delete': data.get('is_delete', False),
+            'is_show': data.get('is_show', False)
+        }
+
+        message_data = {**extracted_fields, **additional_fields}
+
+        if all(extracted_fields.values()):
+            # Create a new Message instance with the merged data
+            message = Message(**message_data)
             id_ = message.save()
 
             try:
                 # Send WeChat notification
-                res_obj = post_wx({'content': content})
+                res_obj = post_wx({'content': message_data['content']})
                 if res_obj['status'] != 200:
                     return {'error': res_obj['msg'], 'status': 500}
 
