@@ -38,7 +38,7 @@ This is my Portfolio's back-end repository, using the python based flask framewo
 
 You can check my Portfolio [here](https://www.chenmo1212.cn?f=github-backend).
 
-## REST API
+### REST API
 
 The project follows the `REST API` architectural style, providing endpoints for various operations.
 
@@ -47,13 +47,23 @@ The project follows the `REST API` architectural style, providing endpoints for 
 - `GET /admin/messages`: Retrieves a list of messages for administration.
 - `PUT /admin/messages/{messageId}/status`: Updates the status of a message.
 - `DELETE /admin/messages/{messageId}`: Deletes a message.
-- `POST /admin/messages/delete`: Deletes multiple messages based on the provided list of IDs.
+- j`POST /admin/messages/delete`: Deletes multiple messages based on the provided list of IDs.
 
-## Wechat Notification
+### Wechat Notification
 
 This project used the enterprise WeChat application to send notifications to WeChat in real time. When a guest sends a new message, a enterprise WeChat notification will be sent. In the environment variables below, `CORPID`, `AGENTID`, `CORPSECRET` and `ADMINURL` are environment variables related to enterprise WeChat notifications. If you don’t need them, just comment them out.
 
 - You can check [here](https://developer.work.weixin.qq.com/document/path/90236) to get more information about [Enterprise WeChat sends application messages](https://developer.work.weixin.qq.com/document/path/90236)
+
+### Api test
+
+This project used `pytest` as the api testing framework, and created a `test_api.py` file in the root directory.
+
+All interfaces can be tested with the following command:
+
+```cmd
+pytest test_api.py
+```
 
 ## Installation
 
