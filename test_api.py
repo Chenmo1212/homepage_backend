@@ -1,5 +1,5 @@
 import pytest
-from app import app  # 导入你的应用的app对象
+from app import app  # Import your application's app object
 
 
 @pytest.fixture
@@ -84,7 +84,6 @@ def test_update_message_status(client, is_show, is_delete, modify_delete):
 
 
 def test_delete_messages(client):
-    # Add test message
     messages = [
         {
             'name': 'John Doe',
