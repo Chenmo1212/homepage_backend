@@ -29,7 +29,7 @@ def post_wx():
         else:
             print('error: Failed to post wechat notification. access_token is invalid. status: 500')
     except Exception as e:
-        print('error: Failed to post wechat notification.' + str(e) +  ' status: 500')
+        print('error: Failed to post wechat notification.' + str(e) + ' status: 500')
 
 
 if __name__ == '__main__':
