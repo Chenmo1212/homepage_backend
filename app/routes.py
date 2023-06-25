@@ -65,6 +65,7 @@ def get_visible_list():
         message_list = []
         for message in messages:
             message_dict = {
+                'id': str(message['_id']),
                 'name': message['name'],
                 'email': message['email'],
                 'content': message['content'],
