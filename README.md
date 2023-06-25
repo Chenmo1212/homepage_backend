@@ -13,6 +13,7 @@
     <a href="https://github.com/Chenmo1212/homepage_backend/pulls" target="_blank">
         <img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/Chenmo1212/homepage_backend" />
     </a>
+    <a href="/"><img src="https://vbr.wocr.tk/badge?page_id=Chenmo1212/homepage_backend.visitors&left_color=green&right_color=red" alt="Visitor" /></a>
     <a href="https://github.com/Chenmo1212/homepage_backend" target="_blank">
         <img alt="GitHub" src="https://img.shields.io/github/license/Chenmo1212/homepage_backend">
     </a>
