@@ -9,9 +9,9 @@ entries_bp = Blueprint('entries', __name__, url_prefix='/api/v1/entries')
 
 @entries_bp.route('', methods=['GET'])
 def get_entries():
-    """获取entries列表"""
+    """Get entries list"""
     try:
-        # 获取查询参数
+        # Get query parameters
         type_filter = request.args.get('type')
         source_filter = request.args.get('source')
         is_show = request.args.get('is_show')
@@ -19,7 +19,7 @@ def get_entries():
         page = int(request.args.get('page', 1))
         limit = int(request.args.get('limit', 20))
         
-        # 构建过滤条件
+        # Build filter conditions
         filters = {}
         if type_filter:
             filters['type'] = type_filter
@@ -31,10 +31,10 @@ def get_entries():
         if tags:
             filters['tags'] = {'$in': tags}
         
-        # 查询数据
+        # Query data
         entries, total = Entry.find_all(filters, page, limit)
         
-        # 格式化返回数据
+        # Format return data
         entry_list = []
         for entry in entries:
             entry_dict = {
@@ -65,11 +65,11 @@ def get_entries():
 
 @entries_bp.route('', methods=['POST'])
 def create_entry():
-    """创建新entry"""
+    """Create new entry"""
     try:
         data = request.json
         
-        # 验证必需字段
+        # Validate required fields
         if 'type' not in data or 'metadata' not in data:
             return jsonify({
                 'error': 'Missing required fields: type and metadata',
@@ -79,14 +79,14 @@ def create_entry():
         entry_type = data['type']
         metadata = data['metadata']
         
-        # 验证类型是否存在
+        # Validate if type exists
         if not type_manager.type_exists(entry_type):
             return jsonify({
                 'error': f'Unknown entry type: {entry_type}',
                 'status': 400
             }), 400
         
-        # 验证metadata
+        # Validate metadata
         is_valid, error_msg = validator.validate_entry(entry_type, metadata)
         if not is_valid:
             return jsonify({
@@ -94,7 +94,7 @@ def create_entry():
                 'status': 400
             }), 400
         
-        # 创建entry
+        # Create entry
         entry = Entry(
             type=entry_type,
             metadata=metadata,
@@ -105,11 +105,11 @@ def create_entry():
         
         entry_id = entry.save()
         
-        # 发送通知
+        # Send notification
         try:
             send_notification(entry_type, metadata, data.get('source'))
         except Exception as e:
-            # 通知失败不影响entry创建
+            # Notification failure does not affect entry creation
             print(f'Notification failed: {str(e)}')
         
         return jsonify({
@@ -124,7 +124,7 @@ def create_entry():
 
 @entries_bp.route('/<string:entry_id>', methods=['GET'])
 def get_entry(entry_id):
-    """获取单个entry"""
+    """Get single entry"""
     try:
         entry = Entry.find_by_id(entry_id)
         
@@ -152,7 +152,7 @@ def get_entry(entry_id):
 
 @entries_bp.route('/<string:entry_id>', methods=['PUT'])
 def update_entry(entry_id):
-    """更新entry"""
+    """Update entry"""
     try:
         data = request.json
         entry = Entry.find_by_id(entry_id)
@@ -163,7 +163,7 @@ def update_entry(entry_id):
                 'status': 404
             }), 404
         
-        # 如果更新metadata，需要验证
+        # If updating metadata, validation required
         if 'metadata' in data:
             is_valid, error_msg = validator.validate_entry(
                 entry['type'],
@@ -175,7 +175,7 @@ def update_entry(entry_id):
                     'status': 400
                 }), 400
         
-        # 更新entry
+        # Update entry
         entry_obj = Entry(
             type=entry['type'],
             metadata=data.get('metadata', entry['metadata']),
@@ -200,7 +200,7 @@ def update_entry(entry_id):
 
 @entries_bp.route('/<string:entry_id>', methods=['DELETE'])
 def delete_entry(entry_id):
-    """删除entry"""
+    """Delete entry"""
     try:
         entry = Entry.find_by_id(entry_id)
         
@@ -228,7 +228,7 @@ def delete_entry(entry_id):
 
 @entries_bp.route('/batch-delete', methods=['POST'])
 def batch_delete_entries():
-    """批量删除entries"""
+    """Batch delete entries"""
     try:
         data = request.json
         id_list = data.get('id_list', [])

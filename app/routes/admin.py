@@ -8,25 +8,25 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/api/v1/admin')
 
 @admin_bp.route('/entries', methods=['GET'])
 def get_all_entries():
-    """管理员获取所有entries"""
+    """Admin get all entries"""
     try:
-        # 获取查询参数
+        # Get query parameters
         type_filter = request.args.get('type')
         source_filter = request.args.get('source')
         page = int(request.args.get('page', 1))
         limit = int(request.args.get('limit', 20))
         
-        # 构建过滤条件
+        # Build filter conditions
         filters = {}
         if type_filter:
             filters['type'] = type_filter
         if source_filter:
             filters['source'] = source_filter
         
-        # 查询数据
+        # Query data
         entries, total = Entry.find_all(filters, page, limit)
         
-        # 格式化返回数据
+        # Format return data
         entry_list = []
         for entry in entries:
             entry_dict = {
@@ -58,7 +58,7 @@ def get_all_entries():
 
 @admin_bp.route('/entries/<string:entry_id>/status', methods=['PUT'])
 def update_entry_status(entry_id):
-    """更新entry状态"""
+    """Update entry状态"""
     try:
         data = request.json
         
@@ -68,7 +68,7 @@ def update_entry_status(entry_id):
                 'status': 400
             }), 400
         
-        # 更新状态
+        # Update status
         success = Entry.update_status(entry_id, data)
         
         if success:
@@ -88,9 +88,9 @@ def update_entry_status(entry_id):
 
 @admin_bp.route('/entries/stats', methods=['GET'])
 def get_stats():
-    """获取统计信息"""
+    """Get statistics"""
     try:
-        # 获取过滤参数
+        # Get filter parameters
         type_filter = request.args.get('type')
         source_filter = request.args.get('source')
         
@@ -113,11 +113,11 @@ def get_stats():
 
 @admin_bp.route('/types', methods=['GET'])
 def get_types():
-    """获取所有支持的类型"""
+    """Get all supported types"""
     try:
         types = type_manager.get_all_types()
         
-        # 格式化返回数据，不包含完整schema
+        # Format return data，不包含完整schema
         type_list = []
         for type_name, config in types.items():
             type_info = {
@@ -139,7 +139,7 @@ def get_types():
 
 @admin_bp.route('/types/<string:type_name>/schema', methods=['GET'])
 def get_type_schema(type_name):
-    """获取特定类型的schema"""
+    """Get schema for specific type"""
     try:
         type_config = type_manager.get_type(type_name)
         
@@ -160,7 +160,7 @@ def get_type_schema(type_name):
 
 @admin_bp.route('/types', methods=['POST'])
 def create_type():
-    """创建新类型"""
+    """Create new type"""
     try:
         data = request.json
         
@@ -173,7 +173,7 @@ def create_type():
         type_name = data['type']
         config = data['config']
         
-        # 验证配置
+        # Validate configuration
         is_valid, error_msg = validator.validate_type_config(config)
         if not is_valid:
             return jsonify({
@@ -181,7 +181,7 @@ def create_type():
                 'status': 400
             }), 400
         
-        # 添加类型
+        # Add type
         success = type_manager.add_type(type_name, config)
         
         if success:
@@ -201,7 +201,7 @@ def create_type():
 
 @admin_bp.route('/types/<string:type_name>', methods=['PUT'])
 def update_type(type_name):
-    """更新类型配置"""
+    """Update type configuration"""
     try:
         data = request.json
         
@@ -213,7 +213,7 @@ def update_type(type_name):
         
         config = data['config']
         
-        # 验证配置
+        # Validate configuration
         is_valid, error_msg = validator.validate_type_config(config)
         if not is_valid:
             return jsonify({
@@ -221,7 +221,7 @@ def update_type(type_name):
                 'status': 400
             }), 400
         
-        # 更新类型
+        # Update type
         success = type_manager.update_type(type_name, config)
         
         if success:

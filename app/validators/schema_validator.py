@@ -4,12 +4,12 @@ from app.config.type_manager import type_manager
 
 
 class SchemaValidator:
-    """JSON Schema验证器"""
+    """JSON Schema validator"""
     
     @staticmethod
     def validate_entry(type_name: str, metadata: Dict) -> Tuple[bool, str]:
         """
-        验证entry的metadata是否符合类型schema
+        Validate if entry metadata conforms to type schema
         
         Returns:
             (is_valid, error_message)
@@ -31,14 +31,14 @@ class SchemaValidator:
     
     @staticmethod
     def validate_type_config(config: Dict) -> Tuple[bool, str]:
-        """验证类型配置是否有效"""
+        """Validate if type configuration is valid"""
         required_fields = ['name', 'schema']
         
         for field in required_fields:
             if field not in config:
                 return False, f"Missing required field: {field}"
         
-        # 验证schema本身的结构
+        # Validate schema structure itself
         schema = config['schema']
         if not isinstance(schema, dict):
             return False, "Schema must be a dictionary"
@@ -49,7 +49,7 @@ class SchemaValidator:
         return True, ""
 
 
-# 全局实例
+# Global instance
 validator = SchemaValidator()
 
 # Made with Bob

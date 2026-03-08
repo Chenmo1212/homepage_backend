@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 
 class Entry:
-    """通用Entry模型，支持多种类型的数据"""
+    """Universal Entry model supporting multiple data types"""
     
     def __init__(
         self,
@@ -32,7 +32,7 @@ class Entry:
         self.tags = tags or []
     
     def save(self) -> str:
-        """保存Entry到数据库"""
+        """Save Entry to database"""
         current_time = datetime.now()
         
         document = {
@@ -51,25 +51,25 @@ class Entry:
         }
         
         if self.id:
-            # 更新现有entry
+            # Update existing entry
             mongo.db.entries.update_one(
                 {'_id': self.id},
                 {'$set': document}
             )
             return str(self.id)
         else:
-            # 创建新entry
+            # Create new entry
             result = mongo.db.entries.insert_one(document)
             return str(result.inserted_id)
     
     def delete(self):
-        """删除Entry"""
+        """Delete Entry"""
         if self.id:
             mongo.db.entries.delete_one({'_id': self.id})
     
     @staticmethod
     def find_by_id(entry_id: str) -> Optional[Dict]:
-        """根据ID查找Entry"""
+        """Find Entry by ID"""
         try:
             return mongo.db.entries.find_one({'_id': ObjectId(entry_id)})
         except Exception:
@@ -77,7 +77,7 @@ class Entry:
     
     @staticmethod
     def find_all(filters: Optional[Dict] = None, page: int = 1, limit: int = 20) -> tuple:
-        """查找所有符合条件的Entries"""
+        """Find all Entries matching criteria"""
         filters = filters or {}
         skip = (page - 1) * limit
         
@@ -88,7 +88,7 @@ class Entry:
     
     @staticmethod
     def find_visible(type: Optional[str] = None, source: Optional[str] = None) -> List[Dict]:
-        """查找可见的Entries"""
+        """Find visible Entries"""
         filters = {'status.is_show': True, 'status.is_delete': False}
         
         if type:
@@ -100,7 +100,7 @@ class Entry:
     
     @staticmethod
     def update_status(entry_id: str, status_updates: Dict) -> bool:
-        """更新Entry状态"""
+        """Update Entry status"""
         update_fields = {}
         
         for key, value in status_updates.items():
@@ -121,14 +121,14 @@ class Entry:
     
     @staticmethod
     def delete_many(entry_ids: List[str]) -> int:
-        """批量删除Entries"""
+        """Batch delete Entries"""
         object_ids = [ObjectId(id) for id in entry_ids]
         result = mongo.db.entries.delete_many({'_id': {'$in': object_ids}})
         return result.deleted_count
     
     @staticmethod
     def get_stats(filters: Optional[Dict] = None) -> Dict:
-        """获取统计信息"""
+        """Get statistics"""
         filters = filters or {}
         
         pipeline = [

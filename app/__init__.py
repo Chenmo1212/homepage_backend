@@ -19,7 +19,7 @@ except ImportError as e:
 
 app.debug = True
 
-# 配置JSON返回UTF-8编码，确保中文正确显示
+# Configure JSON to return UTF-8 encoding for proper character display
 app.config['JSON_AS_ASCII'] = False
 app.config['JSONIFY_MIMETYPE'] = 'application/json; charset=utf-8'
 

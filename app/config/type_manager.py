@@ -4,7 +4,7 @@ from typing import Dict, Optional, List
 
 
 class TypeManager:
-    """管理Entry类型配置"""
+    """Manage Entry type configuration"""
     
     def __init__(self, config_path: str = None):
         if config_path is None:
@@ -16,7 +16,7 @@ class TypeManager:
         self._types = self._load_types()
     
     def _load_types(self) -> Dict:
-        """加载类型配置"""
+        """Load type configuration"""
         try:
             with open(self.config_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
@@ -24,11 +24,11 @@ class TypeManager:
             return self._get_default_types()
     
     def _get_default_types(self) -> Dict:
-        """获取默认类型配置"""
+        """Get default type configuration"""
         return {
             "message": {
-                "name": "留言",
-                "description": "用户留言",
+                "name": "Message",
+                "description": "用户Message",
                 "schema": {
                     "type": "object",
                     "required": ["name", "email", "content"],
@@ -47,24 +47,24 @@ class TypeManager:
         }
     
     def get_type(self, type_name: str) -> Optional[Dict]:
-        """获取特定类型的配置"""
+        """Get configuration for specific type"""
         return self._types.get(type_name)
     
     def get_schema(self, type_name: str) -> Optional[Dict]:
-        """获取特定类型的schema"""
+        """Get schema for specific type"""
         type_config = self.get_type(type_name)
         return type_config.get('schema') if type_config else None
     
     def get_all_types(self) -> Dict:
-        """获取所有类型配置"""
+        """Get all type configurations"""
         return self._types
     
     def type_exists(self, type_name: str) -> bool:
-        """检查类型是否存在"""
+        """Check if type exists"""
         return type_name in self._types
     
     def add_type(self, type_name: str, config: Dict) -> bool:
-        """添加新类型"""
+        """Add new type"""
         if type_name in self._types:
             return False
         
@@ -73,7 +73,7 @@ class TypeManager:
         return True
     
     def update_type(self, type_name: str, config: Dict) -> bool:
-        """更新类型配置"""
+        """Update type configuration"""
         if type_name not in self._types:
             return False
         
@@ -82,17 +82,17 @@ class TypeManager:
         return True
     
     def _save_types(self):
-        """保存类型配置到文件"""
+        """Save type configuration to file"""
         with open(self.config_path, 'w', encoding='utf-8') as f:
             json.dump(self._types, f, ensure_ascii=False, indent=2)
     
     def get_notification_config(self, type_name: str) -> Optional[Dict]:
-        """获取类型的通知配置"""
+        """Get notification configuration for type"""
         type_config = self.get_type(type_name)
         return type_config.get('notification') if type_config else None
 
 
-# 全局实例
+# Global instance
 type_manager = TypeManager()
 
 # Made with Bob

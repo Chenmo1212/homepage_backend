@@ -1,4 +1,6 @@
-# Homepage Backend - 聚合API系统
+# Homepage Backend - Aggregated API System
+
+**Languages:** [English](README.md) | [简体中文](README_CN.md)
 
 <p>
     <a href="https://www.chenmo1212.cn?f=github-backend" target="_blank">
@@ -35,116 +37,116 @@
     </a>
 </p>
 
-## 📖 项目简介
+## 📖 Project Overview
 
-这是一个基于 **Flask + MongoDB** 的**聚合API后端系统**。最初为个人主页的留言功能设计，现已升级为支持多种类型数据的通用API系统，可用于留言、反馈、通知等多种场景。
+This is an **aggregated API backend system** based on **Flask + MongoDB**. Originally designed for homepage message functionality, it has been upgraded to a universal API system supporting multiple data types including messages, feedback, notifications, and more.
 
-🌐 查看我的作品集：[https://www.chenmo1212.cn](https://www.chenmo1212.cn?f=github-backend)
+🌐 Check out my portfolio: [https://www.chenmo1212.cn](https://www.chenmo1212.cn?f=github-backend)
 
-### ✨ 核心特性
+### ✨ Key Features
 
-- 🎯 **多类型支持** - 支持message、feedback、notification等多种entry类型
-- 🔧 **灵活的Schema验证** - 基于JSON Schema的动态字段验证
-- 🔄 **向后兼容** - 原有的`/messages`端点继续可用
-- 🏢 **多项目支持** - 通过`source`字段区分不同项目
-- ⚙️ **动态类型系统** - 通过配置文件轻松添加新类型
-- 📱 **企业微信通知** - 支持多模板的自动通知系统
-- 🌍 **UTF-8支持** - 完美支持中文等多语言字符
+- 🎯 **Multi-Type Support** - Supports message, feedback, notification and other entry types
+- 🔧 **Flexible Schema Validation** - Dynamic field validation based on JSON Schema
+- 🔄 **Backward Compatible** - Original `/messages` endpoints remain functional
+- 🏢 **Multi-Project Support** - Distinguish different projects via `source` field
+- ⚙️ **Dynamic Type System** - Easily add new types via configuration files
+- 📱 **Enterprise WeChat Notifications** - Automatic notification system with multiple templates
+- 🌍 **UTF-8 Support** - Perfect support for Chinese and other multilingual characters
 
 ---
 
-## 🏗️ 架构设计
+## 🏗️ Architecture Design
 
-### 核心概念
+### Core Concepts
 
-系统采用**Entry**作为统一的数据模型，每个Entry包含：
+The system uses **Entry** as a unified data model. Each Entry contains:
 
 ```python
 {
-  "type": "message",           # 类型：message/feedback/notification
-  "source": "homepage",        # 来源：区分不同项目
-  "metadata": {...},           # 元数据：根据type不同而不同
-  "status": {                  # 状态管理
-    "is_show": false,          # 是否可见
-    "is_delete": false,        # 是否删除
-    "is_read": false           # 是否已读
+  "type": "message",           # Type: message/feedback/notification
+  "source": "homepage",        # Source: distinguish different projects
+  "metadata": {...},           # Metadata: varies by type
+  "status": {                  # Status management
+    "is_show": false,          # Visible or not
+    "is_delete": false,        # Deleted or not
+    "is_read": false           # Read or not
   },
-  "timestamps": {...},         # 时间戳
-  "agent": "",                 # 用户代理
-  "tags": []                   # 标签
+  "timestamps": {...},         # Timestamps
+  "agent": "",                 # User agent
+  "tags": []                   # Tags
 }
 ```
 
-### 目录结构
+### Directory Structure
 
 ```
 homepage_backend/
 ├── app/
-│   ├── __init__.py                 # Flask应用初始化
+│   ├── __init__.py                 # Flask app initialization
 │   ├── models/
-│   │   ├── entry.py               # Entry统一模型
-│   │   └── message.py             # Message模型（向后兼容）
+│   │   ├── entry.py               # Unified Entry model
+│   │   └── message.py             # Message model (backward compatible)
 │   ├── routes/
-│   │   ├── entries.py             # 新API路由
-│   │   ├── admin.py               # 管理API路由
-│   │   └── messages_compat.py     # 兼容API路由
+│   │   ├── entries.py             # New API routes
+│   │   ├── admin.py               # Admin API routes
+│   │   └── messages_compat.py     # Compatible API routes
 │   ├── config/
-│   │   ├── type_manager.py        # 类型管理器
-│   │   └── entry_types.json       # 类型配置文件
+│   │   ├── type_manager.py        # Type manager
+│   │   └── entry_types.json       # Type configuration file
 │   ├── validators/
-│   │   └── schema_validator.py    # Schema验证器
+│   │   └── schema_validator.py    # Schema validator
 │   └── notifications/
-│       └── notification_service.py # 通知服务
+│       └── notification_service.py # Notification service
 ├── migrations/
-│   └── migrate_to_entries.py      # 数据迁移脚本
-├── config_development.py           # 开发环境配置
-├── config_production.py            # 生产环境配置
-└── migrate_from_messages_db.py    # 跨数据库迁移工具
+│   └── migrate_to_entries.py      # Data migration script
+├── config_development.py           # Development environment config
+├── config_production.py            # Production environment config
+└── migrate_from_messages_db.py    # Cross-database migration tool
 ```
 
 ---
 
-## 🎯 支持的Entry类型
+## 🎯 Supported Entry Types
 
-### 1. Message（留言）
+### 1. Message
 
-用于用户留言、评论等场景。
+For user messages, comments, etc.
 
-**必需字段：**
-- `name` (string): 用户名称
-- `email` (string): 邮箱地址
-- `content` (string): 留言内容
+**Required Fields:**
+- `name` (string): User name
+- `email` (string): Email address
+- `content` (string): Message content
 
-**可选字段：**
-- `website` (string): 个人网站
+**Optional Fields:**
+- `website` (string): Personal website
 
-**示例：**
+**Example:**
 ```bash
 curl -X POST http://localhost:5001/messages \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "张三",
-    "email": "zhangsan@example.com",
-    "content": "你好，这是一条测试留言！",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "content": "Hello, this is a test message!",
     "website": "https://example.com"
   }'
 ```
 
-### 2. Feedback（反馈）
+### 2. Feedback
 
-用于项目反馈、bug报告、功能建议等。
+For project feedback, bug reports, feature requests, etc.
 
-**必需字段：**
-- `project_name` (string): 项目名称
-- `title` (string): 反馈标题
-- `content` (string): 反馈内容
-- `category` (enum): 类别 - "bug" | "feature" | "improvement" | "question"
+**Required Fields:**
+- `project_name` (string): Project name
+- `title` (string): Feedback title
+- `content` (string): Feedback content
+- `category` (enum): Category - "bug" | "feature" | "improvement" | "question"
 
-**可选字段：**
-- `rating` (integer, 1-5): 评分
-- `contact` (string): 联系方式
+**Optional Fields:**
+- `rating` (integer, 1-5): Rating
+- `contact` (string): Contact information
 
-**示例：**
+**Example:**
 ```bash
 curl -X POST http://localhost:5001/api/v1/entries \
   -H "Content-Type: application/json" \
@@ -152,9 +154,9 @@ curl -X POST http://localhost:5001/api/v1/entries \
     "type": "feedback",
     "source": "homepage",
     "metadata": {
-      "project_name": "个人主页",
-      "title": "功能建议",
-      "content": "希望能添加深色模式",
+      "project_name": "Personal Homepage",
+      "title": "Feature Request",
+      "content": "Please add dark mode",
       "category": "feature",
       "rating": 5,
       "contact": "user@example.com"
@@ -162,20 +164,20 @@ curl -X POST http://localhost:5001/api/v1/entries \
   }'
 ```
 
-### 3. Notification（通知）
+### 3. Notification
 
-用于系统通知、公告等。
+For system notifications, announcements, etc.
 
-**必需字段：**
-- `title` (string): 通知标题
-- `content` (string): 通知内容
-- `level` (enum): 级别 - "info" | "warning" | "error" | "success"
+**Required Fields:**
+- `title` (string): Notification title
+- `content` (string): Notification content
+- `level` (enum): Level - "info" | "warning" | "error" | "success"
 
-**可选字段：**
-- `target_users` (array): 目标用户列表
-- `expire_time` (datetime): 过期时间
+**Optional Fields:**
+- `target_users` (array): Target user list
+- `expire_time` (datetime): Expiration time
 
-**示例：**
+**Example:**
 ```bash
 curl -X POST http://localhost:5001/api/v1/entries \
   -H "Content-Type: application/json" \
@@ -183,8 +185,8 @@ curl -X POST http://localhost:5001/api/v1/entries \
     "type": "notification",
     "source": "system",
     "metadata": {
-      "title": "系统维护通知",
-      "content": "系统将于今晚22:00进行维护，预计持续2小时",
+      "title": "System Maintenance Notice",
+      "content": "System will be under maintenance tonight at 22:00, expected to last 2 hours",
       "level": "warning",
       "target_users": ["admin", "user123"]
     }
@@ -193,27 +195,27 @@ curl -X POST http://localhost:5001/api/v1/entries \
 
 ---
 
-## 📡 API端点
+## 📡 API Endpoints
 
-### 新版聚合API (v1)
+### New Aggregated API (v1)
 
-#### 公开端点
+#### Public Endpoints
 
-**获取可见entries**
+**Get visible entries**
 ```bash
 GET /api/v1/entries
-参数：
-  - type: 类型过滤 (message/feedback/notification)
-  - source: 来源过滤
-  - tags: 标签过滤
-  - page: 页码 (默认: 1)
-  - limit: 每页数量 (默认: 20)
+Parameters:
+  - type: Type filter (message/feedback/notification)
+  - source: Source filter
+  - tags: Tag filter
+  - page: Page number (default: 1)
+  - limit: Items per page (default: 20)
 
-示例：
+Example:
 curl "http://localhost:5001/api/v1/entries?type=feedback&source=homepage"
 ```
 
-**创建entry**
+**Create entry**
 ```bash
 POST /api/v1/entries
 Body: {
@@ -223,26 +225,26 @@ Body: {
 }
 ```
 
-**获取单个entry**
+**Get single entry**
 ```bash
 GET /api/v1/entries/{id}
 ```
 
-#### 管理端点
+#### Admin Endpoints
 
-**获取所有entries（包括隐藏的）**
+**Get all entries (including hidden)**
 ```bash
 GET /api/v1/admin/entries
-参数：
-  - type: 类型过滤
-  - source: 来源过滤
-  - is_show: 可见性过滤
-  - is_delete: 删除状态过滤
-  - page: 页码
-  - limit: 每页数量
+Parameters:
+  - type: Type filter
+  - source: Source filter
+  - is_show: Visibility filter
+  - is_delete: Deletion status filter
+  - page: Page number
+  - limit: Items per page
 ```
 
-**更新entry状态**
+**Update entry status**
 ```bash
 PUT /api/v1/admin/entries/{id}/status
 Body: {
@@ -252,10 +254,10 @@ Body: {
 }
 ```
 
-**获取统计信息**
+**Get statistics**
 ```bash
 GET /api/v1/admin/entries/stats
-返回：
+Returns:
 {
   "total": 100,
   "by_type": {
@@ -268,30 +270,30 @@ GET /api/v1/admin/entries/stats
 }
 ```
 
-**类型管理**
+**Type management**
 ```bash
-# 获取所有类型
+# Get all types
 GET /api/v1/admin/types
 
-# 获取特定类型的schema
+# Get specific type schema
 GET /api/v1/admin/types/{type}/schema
 
-# 创建新类型
+# Create new type
 POST /api/v1/admin/types
 ```
 
-### 向后兼容API
+### Backward Compatible API
 
-原有的`/messages`端点继续可用：
+Original `/messages` endpoints remain functional:
 
 ```bash
-# 获取可见留言
+# Get visible messages
 GET /messages
 
-# 创建留言
+# Create message
 POST /messages
 
-# 管理端点
+# Admin endpoints
 GET /admin/messages
 PUT /admin/messages/{id}/status
 DELETE /admin/messages/{id}
@@ -300,36 +302,36 @@ POST /admin/messages/delete
 
 ---
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 1. 安装
+### 1. Installation
 
 ```bash
-# 克隆仓库
+# Clone repository
 git clone https://github.com/Chenmo1212/homepage_backend.git
 cd homepage_backend
 
-# 创建虚拟环境
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# 安装依赖
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. 配置
+### 2. Configuration
 
-创建 `config_development.py`:
+Create `config_development.py`:
 
 ```python
-# MongoDB连接URI
+# MongoDB connection URI
 MONGO_URI = "mongodb://localhost:27017/homepage"
 
-# 或使用远程MongoDB
+# Or use remote MongoDB
 # MONGO_URI = "mongodb://username:password@host:port/database"
 ```
 
-创建 `.env` (可选，用于企业微信通知):
+Create `.env` (optional, for Enterprise WeChat notifications):
 
 ```env
 FLASK_ENV=development
@@ -339,72 +341,72 @@ CORPSECRET=your-corporate-secret
 ADMINURL=https://your-admin-url
 ```
 
-### 3. 运行
+### 3. Run
 
 ```bash
-# 开发环境
+# Development environment
 export FLASK_ENV=development
 flask run --port 5001
 
-# 或使用脚本
+# Or use script
 chmod +x run_dev.sh
 ./run_dev.sh
 ```
 
-### 4. 测试
+### 4. Test
 
 ```bash
-# 测试根路径
+# Test root path
 curl http://localhost:5001/
 
-# 创建测试数据
+# Create test data
 curl -X POST http://localhost:5001/messages \
   -H "Content-Type: application/json" \
-  -d '{"name":"测试","email":"test@test.com","content":"Hello"}'
+  -d '{"name":"Test","email":"test@test.com","content":"Hello"}'
 
-# 查看数据
+# View data
 curl http://localhost:5001/admin/messages
 ```
 
 ---
 
-## 🔄 数据迁移
+## 🔄 Data Migration
 
-### 从旧系统迁移
+### Migrating from Old System
 
-如果你有旧的messages数据需要迁移：
+If you have old messages data to migrate:
 
 ```bash
-# 1. 查看可用数据库
+# 1. View available databases
 python3 migrate_from_messages_db.py --help
 
-# 2. 迁移测试数据库（推荐先测试）
+# 2. Migrate test database (recommended to test first)
 python3 migrate_from_messages_db.py --test
 
-# 3. 迁移生产数据
+# 3. Migrate production data
 python3 migrate_from_messages_db.py --source Messages --target homepage
 ```
 
-迁移脚本会：
-- ✅ 自动创建JSON备份
-- ✅ 转换数据格式
-- ✅ 创建性能索引
-- ✅ 保留原数据（重命名为backup）
-- ✅ 验证迁移结果
+The migration script will:
+- ✅ Automatically create JSON backups
+- ✅ Convert data format
+- ✅ Create performance indexes
+- ✅ Preserve original data (renamed to backup)
+- ✅ Verify migration results
 
 ---
 
-## ⚙️ 自定义Entry类型
+## ⚙️ Custom Entry Types
 
-### 添加新类型
+### Adding New Types
 
-编辑 `app/config/entry_types.json`:
+Edit `app/config/entry_types.json`:
 
 ```json
 {
   "custom_type": {
-    "name": "自定义类型",
-    "description": "这是一个自定义类型",
+    "name": "Custom Type",
+    "description": "This is a custom type",
     "schema": {
       "type": "object",
       "required": ["field1", "field2"],
@@ -427,7 +429,7 @@ python3 migrate_from_messages_db.py --source Messages --target homepage
 }
 ```
 
-### 使用新类型
+### Using New Types
 
 ```bash
 curl -X POST http://localhost:5001/api/v1/entries \
@@ -444,105 +446,105 @@ curl -X POST http://localhost:5001/api/v1/entries \
 
 ---
 
-## 📱 企业微信通知
+## 📱 Enterprise WeChat Notifications
 
-### 配置通知
+### Configure Notifications
 
-1. 在 `.env` 中配置企业微信参数
-2. 在 `app/config/entry_types.json` 中启用通知
-3. 在 `app/notifications/notification_service.py` 中自定义模板
+1. Configure Enterprise WeChat parameters in `.env`
+2. Enable notifications in `app/config/entry_types.json`
+3. Customize templates in `app/notifications/notification_service.py`
 
-### 通知模板
+### Notification Templates
 
-系统支持多种通知模板：
+The system supports multiple notification templates:
 
-- `wechat_message`: 留言通知
-- `wechat_feedback`: 反馈通知
-- `wechat_notification`: 系统通知
+- `wechat_message`: Message notifications
+- `wechat_feedback`: Feedback notifications
+- `wechat_notification`: System notifications
 
-可以根据需要添加自定义模板。
+You can add custom templates as needed.
 
 ---
 
-## 🧪 测试
+## 🧪 Testing
 
 ```bash
-# 运行所有测试
+# Run all tests
 pytest test_api.py -v
 
-# 运行完整API测试
+# Run complete API tests
 chmod +x test_api_complete.sh
 ./test_api_complete.sh
 ```
 
 ---
 
-## 📚 文档
+## 📚 Documentation
 
-- **[ARCHITECTURE_DESIGN.md](ARCHITECTURE_DESIGN.md)** - 完整的架构设计文档
-- **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** - 详细的实现计划和代码示例
-- **[QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** - 快速开始指南和API使用示例
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - 部署和迁移指南
-- **[MONGODB_SETUP.md](MONGODB_SETUP.md)** - MongoDB设置和问题诊断
-
----
-
-## 🔧 常见问题
-
-### Q: API返回中文乱码？
-A: 已在 `app/__init__.py` 中配置 `JSON_AS_ASCII = False`，重启Flask即可。
-
-### Q: 如何查看所有数据（包括隐藏的）？
-A: 使用管理员端点：`GET /api/v1/admin/entries`
-
-### Q: 如何按类型过滤？
-A: 添加 `type` 参数：`GET /api/v1/entries?type=feedback`
-
-### Q: 如何支持多个项目？
-A: 使用 `source` 字段区分：`GET /api/v1/entries?source=project_a`
-
-### Q: 数据迁移失败怎么办？
-A: 检查 `backups/` 目录中的JSON备份文件，可以手动恢复。
+- **[ARCHITECTURE_DESIGN.md](ARCHITECTURE_DESIGN.md)** - Complete architecture design documentation
+- **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** - Detailed implementation plan and code examples
+- **[QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** - Quick start guide and API usage examples
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Deployment and migration guide
+- **[MONGODB_SETUP.md](MONGODB_SETUP.md)** - MongoDB setup and troubleshooting
 
 ---
 
-## 🤝 贡献
+## 🔧 FAQ
 
-欢迎贡献！请随时提交Pull Request或Issue。
+### Q: API returns garbled Chinese characters?
+A: Already configured `JSON_AS_ASCII = False` in `app/__init__.py`, restart Flask to apply.
 
-### 贡献方向
+### Q: How to view all data (including hidden)?
+A: Use admin endpoint: `GET /api/v1/admin/entries`
 
-- 添加新的entry类型
-- 增强验证规则
-- 性能优化
-- 添加新的通知渠道
-- UI改进
-- 文档完善
+### Q: How to filter by type?
+A: Add `type` parameter: `GET /api/v1/entries?type=feedback`
 
----
+### Q: How to support multiple projects?
+A: Use `source` field to distinguish: `GET /api/v1/entries?source=project_a`
 
-## 📄 许可证
-
-本项目采用 MIT 许可证。
+### Q: What if migration fails?
+A: Check JSON backup files in `backups/` directory, can be manually restored.
 
 ---
 
-## 🙏 致谢
+## 🤝 Contributing
 
-- Flask框架
+Contributions are welcome! Feel free to submit Pull Requests or Issues.
+
+### Areas for Contribution
+
+- Add new entry types
+- Enhance validation rules
+- Performance optimizations
+- Add new notification channels
+- UI improvements
+- Documentation improvements
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 🙏 Acknowledgments
+
+- Flask framework
 - MongoDB
-- 企业微信API
-- JSON Schema验证
-- 所有贡献者
+- Enterprise WeChat API
+- JSON Schema validation
+- All contributors
 
 ---
 
-## 📞 联系方式
+## 📞 Contact
 
-- 作品集：[https://www.chenmo1212.cn](https://www.chenmo1212.cn?f=github-backend)
-- GitHub：[@Chenmo1212](https://github.com/Chenmo1212)
-- Issues：[提交问题](https://github.com/Chenmo1212/homepage_backend/issues)
+- Portfolio: [https://www.chenmo1212.cn](https://www.chenmo1212.cn?f=github-backend)
+- GitHub: [@Chenmo1212](https://github.com/Chenmo1212)
+- Issues: [Submit Issue](https://github.com/Chenmo1212/homepage_backend/issues)
 
 ---
 
-**⭐ 如果这个项目对你有帮助，请给个Star！**
+**⭐ If this project helps you, please give it a Star!**

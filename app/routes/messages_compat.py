@@ -8,7 +8,7 @@ messages_compat_bp = Blueprint('messages_compat', __name__)
 
 @messages_compat_bp.route('/messages', methods=['GET'])
 def get_messages():
-    """向后兼容：获取可见的messages"""
+    """Backward compatible: Get visible messages"""
     try:
         entries = Entry.find_visible(type='message')
         
@@ -31,7 +31,7 @@ def get_messages():
 
 @messages_compat_bp.route('/messages', methods=['POST'])
 def create_message():
-    """向后兼容：创建新message"""
+    """Backward compatible: Create new message"""
     try:
         data = request.json
         
@@ -45,7 +45,7 @@ def create_message():
                 'status': 400
             }), 400
         
-        # 验证metadata
+        # Validate metadata
         is_valid, error_msg = validator.validate_entry('message', metadata)
         if not is_valid:
             return jsonify({
@@ -53,7 +53,7 @@ def create_message():
                 'status': 400
             }), 400
         
-        # 创建entry
+        # Create entry
         entry = Entry(
             type='message',
             metadata=metadata,
@@ -63,7 +63,7 @@ def create_message():
         
         entry_id = entry.save()
         
-        # 发送通知
+        # Send notification
         try:
             send_notification('message', metadata, 'homepage')
         except Exception as e:
@@ -81,7 +81,7 @@ def create_message():
 
 @messages_compat_bp.route('/admin/messages', methods=['GET'])
 def get_all_messages():
-    """向后兼容：管理员获取所有messages"""
+    """Backward compatible: Admin get all messages"""
     try:
         page = int(request.args.get('page', 1))
         limit = int(request.args.get('limit', 100))
@@ -115,7 +115,7 @@ def get_all_messages():
 
 @messages_compat_bp.route('/admin/messages/<string:message_id>/status', methods=['PUT'])
 def update_message_status(message_id):
-    """向后兼容：更新message状态"""
+    """Backward compatible: Update message status"""
     try:
         data = request.json
         
@@ -125,11 +125,11 @@ def update_message_status(message_id):
                 'status': 400
             }), 400
         
-        # 更新状态
+        # Update status
         success = Entry.update_status(message_id, data)
         
         if success:
-            # 构建响应消息
+            # Build response message
             update_msg = ""
             if 'is_show' in data:
                 update_msg += f"is_show changed to {data['is_show']}, "
@@ -156,7 +156,7 @@ def update_message_status(message_id):
 
 @messages_compat_bp.route('/admin/messages/<string:message_id>', methods=['DELETE'])
 def delete_message(message_id):
-    """向后兼容：删除message"""
+    """Backward compatible: Delete message"""
     try:
         entry = Entry.find_by_id(message_id)
         
@@ -184,7 +184,7 @@ def delete_message(message_id):
 
 @messages_compat_bp.route('/admin/messages/delete', methods=['POST'])
 def delete_many_messages():
-    """向后兼容：批量删除messages"""
+    """Backward compatible: Batch delete messages"""
     try:
         data = request.json
         id_list = data.get('id_list', [])

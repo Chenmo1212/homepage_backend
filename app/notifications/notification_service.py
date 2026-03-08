@@ -10,12 +10,12 @@ load_dotenv()
 
 NOTIFICATION_TEMPLATES = {
     "wechat_message": {
-        "title": "新留言通知",
-        "description_template": "来自 {name} 的留言：{content}",
+        "title": "新Message通知",
+        "description_template": "来自 {name} 的Message：{content}",
         "url_template": "{admin_url}"
     },
     "wechat_feedback": {
-        "title": "新反馈通知",
+        "title": "New Feedback Notification",
         "description_template": "项目 {project_name} 收到新反馈：{content}",
         "url_template": "{admin_url}/feedback"
     },
@@ -28,8 +28,8 @@ NOTIFICATION_TEMPLATES = {
 
 
 def send_notification(entry_type: str, metadata: Dict, source: Optional[str] = None):
-    """发送通知"""
-    # 获取类型的通知配置
+    """Send notification"""
+    # Get notification configuration for type
     notification_config = type_manager.get_notification_config(entry_type)
     
     if not notification_config or not notification_config.get('enabled'):
@@ -39,12 +39,12 @@ def send_notification(entry_type: str, metadata: Dict, source: Optional[str] = N
     if not template_name or template_name not in NOTIFICATION_TEMPLATES:
         return
     
-    # 发送企业微信通知
+    # Send Enterprise WeChat notification
     send_wechat_notification(template_name, metadata)
 
 
 def send_wechat_notification(template_name: str, metadata: Dict):
-    """发送企业微信通知"""
+    """Send Enterprise WeChat notification"""
     try:
         CORPID = os.getenv('CORPID')
         AGENTID = os.getenv('AGENTID')
@@ -55,7 +55,7 @@ def send_wechat_notification(template_name: str, metadata: Dict):
             print('WeChat credentials not configured')
             return
         
-        # 获取access_token
+        # Get access_token
         get_token_url = f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={CORPID}&corpsecret={CORPSECRET}"
         response = requests.get(get_token_url).content
         access_token = json.loads(response).get('access_token')
@@ -64,15 +64,15 @@ def send_wechat_notification(template_name: str, metadata: Dict):
             print('Failed to get WeChat access token')
             return
         
-        # 获取模板
+        # Get template
         template = NOTIFICATION_TEMPLATES[template_name]
         
-        # 格式化消息
+        # Format message
         title = template['title'].format(**metadata) if '{' in template['title'] else template['title']
         description = template['description_template'].format(**metadata)
         url = template['url_template'].format(admin_url=ADMIN_URL)
         
-        # 发送消息
+        # Send message
         send_msg_url = f'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}'
         data = {
             "touser": '@all',
@@ -82,7 +82,7 @@ def send_wechat_notification(template_name: str, metadata: Dict):
                 "title": title,
                 "description": description,
                 "url": url,
-                "btntxt": "查看详情"
+                "btntxt": "View Details"
             },
             "enable_id_trans": 0,
             "enable_duplicate_check": 0,

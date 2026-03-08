@@ -1,6 +1,6 @@
 """
 Homepage Backend API Tests
-测试聚合API系统和向后兼容的messages端点
+Test aggregated API system and backward compatible messages endpoints
 """
 
 import pytest
@@ -9,20 +9,20 @@ from app import app
 
 @pytest.fixture
 def client():
-    """创建测试客户端"""
+    """Create test client"""
     with app.test_client() as client:
         yield client
 
 
 # ============================================================================
-# 向后兼容测试 - Legacy Messages API
+# Backward Compatibility Tests - Legacy Messages API
 # ============================================================================
 
 class TestLegacyMessagesAPI:
-    """测试向后兼容的messages端点"""
+    """Test backward compatible messages endpoints"""
     
     def test_get_message_list(self, client):
-        """测试获取可见留言列表"""
+        """Test getting visible message list"""
         response = client.get('/messages')
         assert response.status_code == 200
         assert 'data' in response.json
@@ -30,7 +30,7 @@ class TestLegacyMessagesAPI:
         assert response.json['status'] == 200
     
     def test_create_message(self, client):
-        """测试创建留言"""
+        """Test creating a message"""
         payload = {
             'name': 'John Doe',
             'email': 'john@example.com',
@@ -44,18 +44,18 @@ class TestLegacyMessagesAPI:
         assert 'id' in response.json['data']
     
     def test_create_message_missing_fields(self, client):
-        """测试创建留言时缺少必需字段"""
+        """Test creating message with missing required fields"""
         payload = {
             'name': 'John Doe',
-            # 缺少 email 和 content
+            # Missing email and content
         }
         response = client.post('/messages', json=payload)
         assert response.status_code == 400
         assert 'error' in response.json
     
     def test_admin_get_all_messages(self, client):
-        """测试管理员获取所有留言"""
-        # 先创建一条留言
+        """Test admin getting all messages"""
+        # First create a message
         payload = {
             'name': 'John Doe',
             'email': 'john@example.com',
@@ -65,16 +65,16 @@ class TestLegacyMessagesAPI:
         assert response.status_code == 200
         message_id = response.json['data']['id']
         
-        # 获取所有留言
+        # Get all messages
         response = client.get('/admin/messages')
         assert response.status_code == 200
         assert 'data' in response.json
         
-        # 验证新创建的留言在列表中
+        # Verify newly created message is in the list
         data = response.json['data']
         new_message = next((msg for msg in data if msg['id'] == message_id), None)
         assert new_message is not None
-        assert new_message['is_show'] is False  # 默认不可见
+        assert new_message['is_show'] is False  # Default not visible
     
     @pytest.mark.parametrize("is_show, is_delete, modify_delete", [
         (True, False, False),
@@ -84,8 +84,8 @@ class TestLegacyMessagesAPI:
         (False, True, True),
     ])
     def test_update_message_status(self, client, is_show, is_delete, modify_delete):
-        """测试更新留言状态"""
-        # 创建留言
+        """Test updating message status"""
+        # Create message
         payload = {
             'name': 'John Doe',
             'email': 'john@example.com',
@@ -95,7 +95,7 @@ class TestLegacyMessagesAPI:
         assert response.status_code == 200
         message_id = response.json['data']['id']
         
-        # 更新状态
+        # Update status
         update_payload = {'is_show': is_show}
         if modify_delete:
             update_payload['is_delete'] = is_delete
@@ -104,7 +104,7 @@ class TestLegacyMessagesAPI:
         assert response.status_code == 200
         assert 'msg' in response.json
         
-        # 验证更新结果
+        # Verify update result
         response = client.get('/admin/messages')
         assert response.status_code == 200
         data = response.json['data']
@@ -115,7 +115,7 @@ class TestLegacyMessagesAPI:
             assert updated_message['is_delete'] == is_delete
     
     def test_delete_messages(self, client):
-        """测试批量删除留言"""
+        """Test batch deleting messages"""
         messages = [
             {'name': 'User1', 'email': 'user1@example.com', 'content': 'Message 1'},
             {'name': 'User2', 'email': 'user2@example.com', 'content': 'Message 2'},
@@ -128,12 +128,12 @@ class TestLegacyMessagesAPI:
             assert response.status_code == 200
             message_ids.append(response.json['data']['id'])
         
-        # 批量删除
+        # Batch delete
         response = client.post('/admin/messages/delete', json={'id_list': message_ids})
         assert response.status_code == 200
         assert 'msg' in response.json
         
-        # 验证已删除
+        # Verify deleted
         response = client.get('/admin/messages')
         assert response.status_code == 200
         data = response.json['data']
@@ -142,14 +142,14 @@ class TestLegacyMessagesAPI:
 
 
 # ============================================================================
-# 新版聚合API测试 - Entries API v1
+# New Aggregated API Tests - Entries API v1
 # ============================================================================
 
 class TestEntriesAPI:
-    """测试新版聚合API端点"""
+    """Test new aggregated API endpoints"""
     
     def test_create_message_entry(self, client):
-        """测试通过新API创建message类型entry"""
+        """Test creating message type entry via new API"""
         payload = {
             'type': 'message',
             'source': 'homepage',
@@ -166,7 +166,7 @@ class TestEntriesAPI:
         assert 'id' in response.json['data']
     
     def test_create_feedback_entry(self, client):
-        """测试创建feedback类型entry"""
+        """Test creating feedback type entry"""
         payload = {
             'type': 'feedback',
             'source': 'homepage',
@@ -185,7 +185,7 @@ class TestEntriesAPI:
         assert 'id' in response.json['data']
     
     def test_create_notification_entry(self, client):
-        """测试创建notification类型entry"""
+        """Test creating notification type entry"""
         payload = {
             'type': 'notification',
             'source': 'system',
@@ -202,7 +202,7 @@ class TestEntriesAPI:
         assert 'id' in response.json['data']
     
     def test_create_entry_invalid_type(self, client):
-        """测试创建无效类型的entry"""
+        """Test creating entry with invalid type"""
         payload = {
             'type': 'invalid_type',
             'source': 'test',
@@ -213,13 +213,13 @@ class TestEntriesAPI:
         assert 'error' in response.json
     
     def test_create_entry_missing_required_fields(self, client):
-        """测试创建entry时缺少必需字段"""
+        """Test creating entry with missing required fields"""
         payload = {
             'type': 'feedback',
             'source': 'homepage',
             'metadata': {
                 'title': 'Test',
-                # 缺少 project_name, content, category
+                # Missing project_name, content, category
             }
         }
         response = client.post('/api/v1/entries', json=payload)
@@ -227,15 +227,15 @@ class TestEntriesAPI:
         assert 'error' in response.json
     
     def test_get_visible_entries(self, client):
-        """测试获取可见entries"""
+        """Test getting visible entries"""
         response = client.get('/api/v1/entries')
         assert response.status_code == 200
         assert 'data' in response.json
         assert 'pagination' in response.json
     
     def test_get_entries_filter_by_type(self, client):
-        """测试按类型过滤entries"""
-        # 创建不同类型的entries
+        """Test filtering entries by type"""
+        # Create entries of different types
         client.post('/api/v1/entries', json={
             'type': 'message',
             'source': 'test',
@@ -250,20 +250,20 @@ class TestEntriesAPI:
             }
         })
         
-        # 按类型过滤
+        # Filter by type
         response = client.get('/api/v1/entries?type=message')
         assert response.status_code == 200
-        # 注意：由于默认is_show=False，可能返回空列表
+        # Note: May return empty list due to default is_show=False
         assert 'data' in response.json
     
     def test_get_entries_filter_by_source(self, client):
-        """测试按来源过滤entries"""
+        """Test filtering entries by source"""
         response = client.get('/api/v1/entries?source=homepage')
         assert response.status_code == 200
         assert 'data' in response.json
     
     def test_get_entries_pagination(self, client):
-        """测试分页功能"""
+        """Test pagination functionality"""
         response = client.get('/api/v1/entries?page=1&limit=10')
         assert response.status_code == 200
         assert 'pagination' in response.json
@@ -274,24 +274,24 @@ class TestEntriesAPI:
 
 
 class TestAdminEntriesAPI:
-    """测试管理员API端点"""
+    """Test admin API endpoints"""
     
     def test_get_all_entries(self, client):
-        """测试获取所有entries（包括隐藏的）"""
+        """Test getting all entries (including hidden ones)"""
         response = client.get('/api/v1/admin/entries')
         assert response.status_code == 200
         assert 'data' in response.json
         assert 'pagination' in response.json
     
     def test_get_entries_filter_by_type(self, client):
-        """测试管理员按类型过滤"""
+        """Test admin filtering by type"""
         response = client.get('/api/v1/admin/entries?type=message')
         assert response.status_code == 200
         assert 'data' in response.json
     
     def test_update_entry_status(self, client):
-        """测试更新entry状态"""
-        # 创建entry
+        """Test updating entry status"""
+        # Create entry
         payload = {
             'type': 'message',
             'source': 'test',
@@ -305,7 +305,7 @@ class TestAdminEntriesAPI:
         assert response.status_code == 200
         entry_id = response.json['data']['id']
         
-        # 更新状态
+        # Update status
         update_payload = {
             'is_show': True,
             'is_read': True
@@ -315,7 +315,7 @@ class TestAdminEntriesAPI:
         assert 'msg' in response.json
     
     def test_get_entry_stats(self, client):
-        """测试获取统计信息"""
+        """Test getting statistics"""
         response = client.get('/api/v1/admin/entries/stats')
         assert response.status_code == 200
         assert 'total' in response.json
@@ -324,7 +324,7 @@ class TestAdminEntriesAPI:
         assert 'by_status' in response.json
     
     def test_get_all_types(self, client):
-        """测试获取所有支持的类型"""
+        """Test getting all supported types"""
         response = client.get('/api/v1/admin/types')
         assert response.status_code == 200
         assert 'types' in response.json
@@ -334,7 +334,7 @@ class TestAdminEntriesAPI:
         assert 'notification' in types
     
     def test_get_type_schema(self, client):
-        """测试获取类型schema"""
+        """Test getting type schema"""
         response = client.get('/api/v1/admin/types/message/schema')
         assert response.status_code == 200
         assert 'type' in response.json
@@ -342,8 +342,8 @@ class TestAdminEntriesAPI:
         assert response.json['type'] == 'message'
     
     def test_batch_delete_entries(self, client):
-        """测试批量删除entries"""
-        # 创建多个entries
+        """Test batch deleting entries"""
+        # Create multiple entries
         entry_ids = []
         for i in range(3):
             response = client.post('/api/v1/entries', json={
@@ -358,22 +358,22 @@ class TestAdminEntriesAPI:
             assert response.status_code == 200
             entry_ids.append(response.json['data']['id'])
         
-        # 批量删除
+        # Batch delete
         response = client.post('/api/v1/entries/batch-delete', json={'id_list': entry_ids})
         assert response.status_code == 200
         assert 'msg' in response.json
 
 
 # ============================================================================
-# 集成测试
+# Integration Tests
 # ============================================================================
 
 class TestIntegration:
-    """测试系统集成和向后兼容性"""
+    """Test system integration and backward compatibility"""
     
     def test_backward_compatibility(self, client):
-        """测试向后兼容性：通过旧API创建，通过新API查询"""
-        # 通过旧API创建message
+        """Test backward compatibility: create via old API, query via new API"""
+        # Create via old API
         payload = {
             'name': 'Test User',
             'email': 'test@example.com',
@@ -383,18 +383,18 @@ class TestIntegration:
         assert response.status_code == 200
         message_id = response.json['data']['id']
         
-        # 通过新API查询（管理员端点）
+        # Query via new API (admin endpoint)
         response = client.get('/api/v1/admin/entries?type=message')
         assert response.status_code == 200
         data = response.json['data']
         
-        # 验证能找到刚创建的message
+        # Verify newly created message can be found
         found = any(entry['id'] == message_id for entry in data)
         assert found
     
     def test_cross_api_status_update(self, client):
-        """测试跨API状态更新：新API创建，旧API更新"""
-        # 通过新API创建
+        """Test cross-API status update: create via new API, update via old API"""
+        # Create via new API
         payload = {
             'type': 'message',
             'source': 'homepage',
@@ -408,11 +408,11 @@ class TestIntegration:
         assert response.status_code == 200
         entry_id = response.json['data']['id']
         
-        # 通过旧API更新状态
+        # Update status via old API
         response = client.put(f'/admin/messages/{entry_id}/status', json={'is_show': True})
         assert response.status_code == 200
         
-        # 验证更新成功
+        # Verify update succeeded
         response = client.get('/api/v1/admin/entries')
         assert response.status_code == 200
         data = response.json['data']
@@ -421,8 +421,8 @@ class TestIntegration:
         assert updated_entry['status']['is_show'] is True
     
     def test_multi_type_workflow(self, client):
-        """测试多类型工作流"""
-        # 创建不同类型的entries
+        """Test multi-type workflow"""
+        # Create entries of different types
         types_data = [
             {
                 'type': 'message',
@@ -457,7 +457,7 @@ class TestIntegration:
             assert response.status_code == 200
             created_ids.append(response.json['data']['id'])
         
-        # 验证所有类型都创建成功
+        # Verify all types were created successfully
         response = client.get('/api/v1/admin/entries')
         assert response.status_code == 200
         all_entries = response.json['data']
@@ -468,7 +468,7 @@ class TestIntegration:
 
 
 # ============================================================================
-# 运行测试
+# Run Tests
 # ============================================================================
 
 if __name__ == '__main__':
