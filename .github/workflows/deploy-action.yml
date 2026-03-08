@@ -19,9 +19,9 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           ARGS: "-rltgoDzvO"
           SOURCE: "/"
-          REMOTE_HOST: ${{ variables.REMOTE_HOST }}
+          REMOTE_HOST: ${{ vars.REMOTE_HOST }}
           REMOTE_USER: 'root'
-          TARGET: ${{ variables.TARGET }}
+          TARGET: ${{ vars.TARGET }}
 
       - name: Step 3 - Install Python 🐧
         uses: actions/setup-python@v4
@@ -33,4 +33,4 @@ jobs:
         run: pip install requests==2.27.1
 
       - name: Step 5 - Send Wechat Notification 🐣
-        run: python wechat.py ${{ github.repository }} ${{ job.status }} ${{ variables.AGENTID }} ${{ variables.CORPID }} ${{ variables.CORPSECRET }}
+        run: python wechat.py ${{ github.repository }} ${{ job.status }} ${{ vars.AGENTID }} ${{ vars.CORPID }} ${{ vars.CORPSECRET }}
