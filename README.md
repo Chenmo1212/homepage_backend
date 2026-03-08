@@ -1,4 +1,6 @@
-# Homepage back-end
+# Homepage Backend - Aggregated API System
+
+**Languages:** [English](README.md) | [简体中文](README_CN.md)
 
 <p>
     <a href="https://www.chenmo1212.cn?f=github-backend" target="_blank">
@@ -13,7 +15,6 @@
     <a href="https://github.com/Chenmo1212/homepage_backend/pulls" target="_blank">
         <img alt="GitHub pull requests" src="https://img.shields.io/github/issues-pr/Chenmo1212/homepage_backend" />
     </a>
-    <!-- https://github.com/antonkomarev/github-profile-views-counter -->
     <a href="/">
         <img src="https://komarev.com/ghpvc/?username=chenmo1212-homepage-backend&label=Visitors&base=200" alt="Visitor" />
     </a>
@@ -36,97 +37,488 @@
     </a>
 </p>
 
-## Description
+## 📖 Project Overview
 
-This is my Portfolio's back-end repository, using the python based flask framework.
+This is an **aggregated API backend system** based on **Flask + MongoDB**. Originally designed for homepage message functionality, it has been upgraded to a universal API system supporting multiple data types including messages, feedback, notifications, and more.
 
-You can check my Portfolio [here](https://www.chenmo1212.cn?f=github-backend).
+🌐 Check out my portfolio: [https://www.chenmo1212.cn](https://www.chenmo1212.cn?f=github-backend)
 
-### REST API
+### ✨ Key Features
 
-The project follows the `REST API` architectural style, providing endpoints for various operations.
+- 🎯 **Multi-Type Support** - Supports message, feedback, notification and other entry types
+- 🔧 **Flexible Schema Validation** - Dynamic field validation based on JSON Schema
+- 🔄 **Backward Compatible** - Original `/messages` endpoints remain functional
+- 🏢 **Multi-Project Support** - Distinguish different projects via `source` field
+- ⚙️ **Dynamic Type System** - Easily add new types via configuration files
+- 📱 **Enterprise WeChat Notifications** - Automatic notification system with multiple templates
+- 🌍 **UTF-8 Support** - Perfect support for Chinese and other multilingual characters
 
-- `GET /messages`: Retrieves a list of messages for guests.
-- `POST /messages`: Adds a new message.
-- `GET /admin/messages`: Retrieves a list of messages for administration.
-- `PUT /admin/messages/{messageId}/status`: Updates the status of a message.
-- `DELETE /admin/messages/{messageId}`: Deletes a message.
-- j`POST /admin/messages/delete`: Deletes multiple messages based on the provided list of IDs.
+---
 
-### Wechat Notification
+## 🏗️ Architecture Design
 
-This project used the enterprise WeChat application to send notifications to WeChat in real time. When a guest sends a new message, a enterprise WeChat notification will be sent. In the environment variables below, `CORPID`, `AGENTID`, `CORPSECRET` and `ADMINURL` are environment variables related to enterprise WeChat notifications. If you don’t need them, just comment them out.
+### Core Concepts
 
-- You can check [here](https://developer.work.weixin.qq.com/document/path/90236) to get more information about [Enterprise WeChat sends application messages](https://developer.work.weixin.qq.com/document/path/90236)
+The system uses **Entry** as a unified data model. Each Entry contains:
 
-### Api test
-
-This project used `pytest` as the api testing framework, and created a `test_api.py` file in the root directory.
-
-All interfaces can be tested with the following command:
-
-```cmd
-pytest test_api.py
+```python
+{
+  "type": "message",           # Type: message/feedback/notification
+  "source": "homepage",        # Source: distinguish different projects
+  "metadata": {...},           # Metadata: varies by type
+  "status": {                  # Status management
+    "is_show": false,          # Visible or not
+    "is_delete": false,        # Deleted or not
+    "is_read": false           # Read or not
+  },
+  "timestamps": {...},         # Timestamps
+  "agent": "",                 # User agent
+  "tags": []                   # Tags
+}
 ```
 
-## Installation
+### Directory Structure
 
-1. Clone the repository:
+```
+homepage_backend/
+├── app/
+│   ├── __init__.py                 # Flask app initialization
+│   ├── models/
+│   │   ├── entry.py               # Unified Entry model
+│   │   └── message.py             # Message model (backward compatible)
+│   ├── routes/
+│   │   ├── entries.py             # New API routes
+│   │   ├── admin.py               # Admin API routes
+│   │   └── messages_compat.py     # Compatible API routes
+│   ├── config/
+│   │   ├── type_manager.py        # Type manager
+│   │   └── entry_types.json       # Type configuration file
+│   ├── validators/
+│   │   └── schema_validator.py    # Schema validator
+│   └── notifications/
+│       └── notification_service.py # Notification service
+├── migrations/
+│   └── migrate_to_entries.py      # Data migration script
+├── config_development.py           # Development environment config
+├── config_production.py            # Production environment config
+└── migrate_from_messages_db.py    # Cross-database migration tool
+```
 
-   ```cmd
-   git clone https://github.com/Chenmo1212/homepage_backend.git
-   ```
+---
 
-2. Navigate to the project directory:
+## 🎯 Supported Entry Types
 
-   ```cmd
-   cd your-repository
-   ```
+### 1. Message
 
-3. Create virtual environment:
+For user messages, comments, etc.
 
-   ```cmd
-   python -m venv venv
-   ```
+**Required Fields:**
+- `name` (string): User name
+- `email` (string): Email address
+- `content` (string): Message content
 
-4. Install the dependencies after entering the virtual environment just created:
+**Optional Fields:**
+- `website` (string): Personal website
 
-   ```cmd
-   pip install -r requirements.txt
-   ```
+**Example:**
+```bash
+curl -X POST http://localhost:5001/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "John Doe",
+    "email": "john@example.com",
+    "content": "Hello, this is a test message!",
+    "website": "https://example.com"
+  }'
+```
 
-5. Set up the environment variables:
+### 2. Feedback
 
-   - Create a `.env` file in the project root directory. 
+For project feedback, bug reports, feature requests, etc.
 
-   - Add the following environment variables:  
+**Required Fields:**
+- `project_name` (string): Project name
+- `title` (string): Feedback title
+- `content` (string): Feedback content
+- `category` (enum): Category - "bug" | "feature" | "improvement" | "question"
 
-     ```
-     FLASK_ENV=development
-     CORPID=your-corporate-id
-     AGENTID=your-agent-id
-     CORPSECRET=your-corporate-secret
-     ADMINURL=https://xxxxxxx
-     ```
+**Optional Fields:**
+- `rating` (integer, 1-5): Rating
+- `contact` (string): Contact information
 
-6. Set up the configure file for development environment:
+**Example:**
+```bash
+curl -X POST http://localhost:5001/api/v1/entries \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "feedback",
+    "source": "homepage",
+    "metadata": {
+      "project_name": "Personal Homepage",
+      "title": "Feature Request",
+      "content": "Please add dark mode",
+      "category": "feature",
+      "rating": 5,
+      "contact": "user@example.com"
+    }
+  }'
+```
 
-   - Create a `config_development.py` file in the project root directory. 
+### 3. Notification
 
-   - Add the following variables:  
+For system notifications, announcements, etc.
 
-     ```python
-     MONGO_URI=your-mongodb-uri
-     ```
+**Required Fields:**
+- `title` (string): Notification title
+- `content` (string): Notification content
+- `level` (enum): Level - "info" | "warning" | "error" | "success"
 
-7. Run the application:
+**Optional Fields:**
+- `target_users` (array): Target user list
+- `expire_time` (datetime): Expiration time
 
-   ```cmd
-   flask run
-   ```
+**Example:**
+```bash
+curl -X POST http://localhost:5001/api/v1/entries \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "notification",
+    "source": "system",
+    "metadata": {
+      "title": "System Maintenance Notice",
+      "content": "System will be under maintenance tonight at 22:00, expected to last 2 hours",
+      "level": "warning",
+      "target_users": ["admin", "user123"]
+    }
+  }'
+```
 
-## Contributing
-Contributions are welcome! Please feel free to submit a pull request or open an issue if you find a bug or have a suggestion for a new feature.
+---
 
-## License
+## 📡 API Endpoints
+
+### New Aggregated API (v1)
+
+#### Public Endpoints
+
+**Get visible entries**
+```bash
+GET /api/v1/entries
+Parameters:
+  - type: Type filter (message/feedback/notification)
+  - source: Source filter
+  - tags: Tag filter
+  - page: Page number (default: 1)
+  - limit: Items per page (default: 20)
+
+Example:
+curl "http://localhost:5001/api/v1/entries?type=feedback&source=homepage"
+```
+
+**Create entry**
+```bash
+POST /api/v1/entries
+Body: {
+  "type": "message",
+  "source": "homepage",
+  "metadata": {...}
+}
+```
+
+**Get single entry**
+```bash
+GET /api/v1/entries/{id}
+```
+
+#### Admin Endpoints
+
+**Get all entries (including hidden)**
+```bash
+GET /api/v1/admin/entries
+Parameters:
+  - type: Type filter
+  - source: Source filter
+  - is_show: Visibility filter
+  - is_delete: Deletion status filter
+  - page: Page number
+  - limit: Items per page
+```
+
+**Update entry status**
+```bash
+PUT /api/v1/admin/entries/{id}/status
+Body: {
+  "is_show": true,
+  "is_delete": false,
+  "is_read": true
+}
+```
+
+**Get statistics**
+```bash
+GET /api/v1/admin/entries/stats
+Returns:
+{
+  "total": 100,
+  "by_type": {
+    "message": 60,
+    "feedback": 30,
+    "notification": 10
+  },
+  "by_source": {...},
+  "by_status": {...}
+}
+```
+
+**Type management**
+```bash
+# Get all types
+GET /api/v1/admin/types
+
+# Get specific type schema
+GET /api/v1/admin/types/{type}/schema
+
+# Create new type
+POST /api/v1/admin/types
+```
+
+### Backward Compatible API
+
+Original `/messages` endpoints remain functional:
+
+```bash
+# Get visible messages
+GET /messages
+
+# Create message
+POST /messages
+
+# Admin endpoints
+GET /admin/messages
+PUT /admin/messages/{id}/status
+DELETE /admin/messages/{id}
+POST /admin/messages/delete
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Installation
+
+```bash
+# Clone repository
+git clone https://github.com/Chenmo1212/homepage_backend.git
+cd homepage_backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### 2. Configuration
+
+Create `config_development.py`:
+
+```python
+# MongoDB connection URI
+MONGO_URI = "mongodb://localhost:27017/homepage"
+
+# Or use remote MongoDB
+# MONGO_URI = "mongodb://username:password@host:port/database"
+```
+
+Create `.env` (optional, for Enterprise WeChat notifications):
+
+```env
+FLASK_ENV=development
+CORPID=your-corporate-id
+AGENTID=your-agent-id
+CORPSECRET=your-corporate-secret
+ADMINURL=https://your-admin-url
+```
+
+### 3. Run
+
+```bash
+# Development environment
+export FLASK_ENV=development
+flask run --port 5001
+
+# Or use script
+chmod +x run_dev.sh
+./run_dev.sh
+```
+
+### 4. Test
+
+```bash
+# Test root path
+curl http://localhost:5001/
+
+# Create test data
+curl -X POST http://localhost:5001/messages \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","email":"test@test.com","content":"Hello"}'
+
+# View data
+curl http://localhost:5001/admin/messages
+```
+
+---
+
+## ⚙️ Custom Entry Types
+
+### Adding New Types
+
+Edit `app/config/entry_types.json`:
+
+```json
+{
+  "custom_type": {
+    "name": "Custom Type",
+    "description": "This is a custom type",
+    "schema": {
+      "type": "object",
+      "required": ["field1", "field2"],
+      "properties": {
+        "field1": {
+          "type": "string",
+          "minLength": 1
+        },
+        "field2": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "notification": {
+      "enabled": true,
+      "template": "custom_template"
+    }
+  }
+}
+```
+
+### Using New Types
+
+```bash
+curl -X POST http://localhost:5001/api/v1/entries \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "custom_type",
+    "source": "my_project",
+    "metadata": {
+      "field1": "value1",
+      "field2": 42
+    }
+  }'
+```
+
+---
+
+## 📱 Enterprise WeChat Notifications
+
+### Configure Notifications
+
+1. Configure Enterprise WeChat parameters in `.env`
+2. Enable notifications in `app/config/entry_types.json`
+3. Customize templates in `app/notifications/notification_service.py`
+
+### Notification Templates
+
+The system supports multiple notification templates:
+
+- `wechat_message`: Message notifications
+- `wechat_feedback`: Feedback notifications
+- `wechat_notification`: System notifications
+
+You can add custom templates as needed.
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pytest test_api.py -v
+
+# Run complete API tests
+chmod +x test_api_complete.sh
+./test_api_complete.sh
+```
+
+---
+
+## 📚 Documentation
+
+- **[ARCHITECTURE_DESIGN.md](ARCHITECTURE_DESIGN.md)** - Complete architecture design documentation
+- **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** - Detailed implementation plan and code examples
+- **[QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** - Quick start guide and API usage examples
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Deployment and migration guide
+- **[MONGODB_SETUP.md](MONGODB_SETUP.md)** - MongoDB setup and troubleshooting
+
+---
+
+## 🔧 FAQ
+
+### Q: API returns garbled Chinese characters?
+A: Already configured `JSON_AS_ASCII = False` in `app/__init__.py`, restart Flask to apply.
+
+### Q: How to view all data (including hidden)?
+A: Use admin endpoint: `GET /api/v1/admin/entries`
+
+### Q: How to filter by type?
+A: Add `type` parameter: `GET /api/v1/entries?type=feedback`
+
+### Q: How to support multiple projects?
+A: Use `source` field to distinguish: `GET /api/v1/entries?source=project_a`
+
+### Q: What if migration fails?
+A: Check JSON backup files in `backups/` directory, can be manually restored.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Feel free to submit Pull Requests or Issues.
+
+### Areas for Contribution
+
+- Add new entry types
+- Enhance validation rules
+- Performance optimizations
+- Add new notification channels
+- UI improvements
+- Documentation improvements
+
+---
+
+## 📄 License
+
 This project is licensed under the MIT License.
+
+---
+
+## 🙏 Acknowledgments
+
+- Flask framework
+- MongoDB
+- Enterprise WeChat API
+- JSON Schema validation
+- All contributors
+
+---
+
+## 📞 Contact
+
+- Portfolio: [https://www.chenmo1212.cn](https://www.chenmo1212.cn?f=github-backend)
+- GitHub: [@Chenmo1212](https://github.com/Chenmo1212)
+- Issues: [Submit Issue](https://github.com/Chenmo1212/homepage_backend/issues)
+
+---
+
+**⭐ If this project helps you, please give it a Star!**
