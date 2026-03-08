@@ -370,32 +370,6 @@ curl http://localhost:5001/admin/messages
 
 ---
 
-## 🔄 数据迁移
-
-### 从旧系统迁移
-
-如果你有旧的messages数据需要迁移：
-
-```bash
-# 1. 查看可用数据库
-python3 migrate_from_messages_db.py --help
-
-# 2. 迁移测试数据库（推荐先测试）
-python3 migrate_from_messages_db.py --test
-
-# 3. 迁移生产数据
-python3 migrate_from_messages_db.py --source Messages --target homepage
-```
-
-迁移脚本会：
-- ✅ 自动创建JSON备份
-- ✅ 转换数据格式
-- ✅ 创建性能索引
-- ✅ 保留原数据（重命名为backup）
-- ✅ 验证迁移结果
-
----
-
 ## ⚙️ 自定义Entry类型
 
 ### 添加新类型

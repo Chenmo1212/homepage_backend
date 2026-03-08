@@ -370,32 +370,6 @@ curl http://localhost:5001/admin/messages
 
 ---
 
-## 🔄 Data Migration
-
-### Migrating from Old System
-
-If you have old messages data to migrate:
-
-```bash
-# 1. View available databases
-python3 migrate_from_messages_db.py --help
-
-# 2. Migrate test database (recommended to test first)
-python3 migrate_from_messages_db.py --test
-
-# 3. Migrate production data
-python3 migrate_from_messages_db.py --source Messages --target homepage
-```
-
-The migration script will:
-- ✅ Automatically create JSON backups
-- ✅ Convert data format
-- ✅ Create performance indexes
-- ✅ Preserve original data (renamed to backup)
-- ✅ Verify migration results
-
----
-
 ## ⚙️ Custom Entry Types
 
 ### Adding New Types
