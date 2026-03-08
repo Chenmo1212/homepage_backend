@@ -1,0 +1,99 @@
+{
+  "message": {
+    "name": "留言",
+    "description": "用户留言",
+    "schema": {
+      "type": "object",
+      "required": ["name", "email", "content"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 50
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "website": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "notification": {
+      "enabled": true,
+      "template": "wechat_message"
+    }
+  },
+  "feedback": {
+    "name": "反馈",
+    "description": "项目反馈",
+    "schema": {
+      "type": "object",
+      "required": ["project_name", "content"],
+      "properties": {
+        "project_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "rating": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "category": {
+          "type": "string",
+          "enum": ["bug", "feature", "improvement", "question"]
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "contact": {
+          "type": "string"
+        }
+      }
+    },
+    "notification": {
+      "enabled": true,
+      "template": "wechat_feedback"
+    }
+  },
+  "notification": {
+    "name": "通知",
+    "description": "系统通知",
+    "schema": {
+      "type": "object",
+      "required": ["title", "content"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["high", "medium", "low"],
+          "default": "medium"
+        },
+        "target_user": {
+          "type": "string"
+        }
+      }
+    },
+    "notification": {
+      "enabled": false
+    }
+  }
+}

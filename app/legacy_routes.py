@@ -1,6 +1,6 @@
 from flask import jsonify, request
 from app import app, mongo
-from app.models import Message
+from app.models import Message  # 从app/models.py导入
 from datetime import datetime
 import requests, json
 from bson import ObjectId
