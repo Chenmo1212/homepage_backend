@@ -70,7 +70,12 @@ def send_wechat_notification(template_name: str, metadata: Dict):
         # Format message
         title = template['title'].format(**metadata) if '{' in template['title'] else template['title']
         description = template['description_template'].format(**metadata)
-        url = template['url_template'].format(admin_url=ADMIN_URL)
+        
+        # Use custom website URL from metadata if available, otherwise use template URL
+        if 'website' in metadata and metadata['website']:
+            url = metadata['website']
+        else:
+            url = template['url_template'].format(admin_url=ADMIN_URL)
         
         # Send message
         send_msg_url = f'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}'
