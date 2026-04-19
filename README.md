@@ -41,7 +41,7 @@
 
 This is an **aggregated API backend system** based on **Flask + MongoDB**. Originally designed for homepage message functionality, it has been upgraded to a universal API system supporting multiple data types including messages, feedback, notifications, and more.
 
-🌐 Check out my portfolio: [https://www.chenmo1212.cn](https://www.chenmo1212.cn?f=github-backend)
+🌐 Check out my portfolio: [https://chenmo1212.cn](https://chenmo1212.cn?f=github-backend)
 
 ### ✨ Key Features
 
@@ -515,7 +515,7 @@ This project is licensed under the MIT License.
 
 ## 📞 Contact
 
-- Portfolio: [https://www.chenmo1212.cn](https://www.chenmo1212.cn?f=github-backend)
+- Portfolio: [https://chenmo1212.cn](https://chenmo1212.cn?f=github-backend)
 - GitHub: [@Chenmo1212](https://github.com/Chenmo1212)
 - Issues: [Submit Issue](https://github.com/Chenmo1212/homepage_backend/issues)
 

@@ -1,0 +1,1308 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Homepage Backend API",
+    "description": "A flexible content management API for handling various entry types with validation and notifications",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Entries",
+      "description": "Entry management endpoints"
+    },
+    {
+      "name": "Admin",
+      "description": "Administrative endpoints"
+    },
+    {
+      "name": "Messages (Legacy)",
+      "description": "Backward compatible message endpoints"
+    }
+  ],
+  "paths": {
+    "/api/v1/entries": {
+      "get": {
+        "tags": ["Entries"],
+        "summary": "Get entries list",
+        "description": "Retrieve a paginated list of entries with optional filters",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filter by entry type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "Filter by source",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "is_show",
+            "in": "query",
+            "description": "Filter by visibility status",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "tags",
+            "in": "query",
+            "description": "Filter by tags (can be multiple)",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Entry"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Entries"],
+        "summary": "Create new entry",
+        "description": "Create a new entry with validation",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entry created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Entry created successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/entries/{entry_id}": {
+      "get": {
+        "tags": ["Entries"],
+        "summary": "Get single entry",
+        "description": "Retrieve a specific entry by ID",
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "description": "Entry ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Entry"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Entries"],
+        "summary": "Update entry",
+        "description": "Update an existing entry",
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "description": "Entry ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEntryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entry updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Entry updated successfully"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Entries"],
+        "summary": "Delete entry",
+        "description": "Delete a specific entry",
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "description": "Entry ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entry deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Entry deleted successfully"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/entries/batch-delete": {
+      "post": {
+        "tags": ["Entries"],
+        "summary": "Batch delete entries",
+        "description": "Delete multiple entries at once",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id_list"],
+                "properties": {
+                  "id_list": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "example": ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entries deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Deleted 2 entries"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/entries": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Admin get all entries",
+        "description": "Retrieve all entries including hidden and deleted ones",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filter by entry type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "Filter by source",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminEntry"
+                      }
+                    },
+                    "pagination": {
+                      "$ref": "#/components/schemas/Pagination"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/entries/{entry_id}/status": {
+      "put": {
+        "tags": ["Admin"],
+        "summary": "Update entry status",
+        "description": "Update the status fields of an entry",
+        "parameters": [
+          {
+            "name": "entry_id",
+            "in": "path",
+            "required": true,
+            "description": "Entry ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "is_show": {
+                    "type": "boolean"
+                  },
+                  "is_delete": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Entry status updated successfully"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/entries/stats": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get statistics",
+        "description": "Get entry statistics with optional filters",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filter by entry type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "description": "Filter by source",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "description": "Statistics data"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/types": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get all supported types",
+        "description": "Retrieve all configured entry types",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TypeInfo"
+                      }
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Admin"],
+        "summary": "Create new type",
+        "description": "Add a new entry type configuration",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["type", "config"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "example": "blog_post"
+                  },
+                  "config": {
+                    "type": "object",
+                    "description": "Type configuration with schema"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Type created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Type blog_post created successfully"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/types/{type_name}/schema": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get type schema",
+        "description": "Retrieve the complete schema for a specific type",
+        "parameters": [
+          {
+            "name": "type_name",
+            "in": "path",
+            "required": true,
+            "description": "Type name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "description": "Complete type configuration"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/types/{type_name}": {
+      "put": {
+        "tags": ["Admin"],
+        "summary": "Update type configuration",
+        "description": "Update an existing type configuration",
+        "parameters": [
+          {
+            "name": "type_name",
+            "in": "path",
+            "required": true,
+            "description": "Type name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["config"],
+                "properties": {
+                  "config": {
+                    "type": "object",
+                    "description": "Updated type configuration"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Type updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Type blog_post updated successfully"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/messages": {
+      "get": {
+        "tags": ["Messages (Legacy)"],
+        "summary": "Get visible messages",
+        "description": "Backward compatible endpoint to get visible messages",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      }
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Messages (Legacy)"],
+        "summary": "Create new message",
+        "description": "Backward compatible endpoint to create a message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Message created successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/admin/messages": {
+      "get": {
+        "tags": ["Messages (Legacy)"],
+        "summary": "Admin get all messages",
+        "description": "Backward compatible endpoint to get all messages",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminMessage"
+                      }
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/admin/messages/{message_id}/status": {
+      "put": {
+        "tags": ["Messages (Legacy)"],
+        "summary": "Update message status",
+        "description": "Backward compatible endpoint to update message status",
+        "parameters": [
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "is_show": {
+                    "type": "boolean"
+                  },
+                  "is_delete": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/admin/messages/{message_id}": {
+      "delete": {
+        "tags": ["Messages (Legacy)"],
+        "summary": "Delete message",
+        "description": "Backward compatible endpoint to delete a message",
+        "parameters": [
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message deleted successfully"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/admin/messages/delete": {
+      "post": {
+        "tags": ["Messages (Legacy)"],
+        "summary": "Batch delete messages",
+        "description": "Backward compatible endpoint to delete multiple messages",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id_list"],
+                "properties": {
+                  "id_list": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Messages deleted successfully"
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Entry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "type": {
+            "type": "string",
+            "example": "message"
+          },
+          "source": {
+            "type": "string",
+            "example": "homepage"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Entry-specific data based on type"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          },
+          "timestamps": {
+            "$ref": "#/components/schemas/Timestamps"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["important", "urgent"]
+          }
+        }
+      },
+      "AdminEntry": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entry"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "agent": {
+                "type": "string",
+                "description": "User agent string"
+              }
+            }
+          }
+        ]
+      },
+      "Status": {
+        "type": "object",
+        "properties": {
+          "is_show": {
+            "type": "boolean",
+            "example": true
+          },
+          "is_delete": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "Timestamps": {
+        "type": "object",
+        "properties": {
+          "create_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "update_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "admin_time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "delete_time": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "limit": {
+            "type": "integer",
+            "example": 20
+          },
+          "total": {
+            "type": "integer",
+            "example": 100
+          },
+          "pages": {
+            "type": "integer",
+            "example": 5
+          }
+        }
+      },
+      "CreateEntryRequest": {
+        "type": "object",
+        "required": ["type", "metadata"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "message"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Entry-specific data"
+          },
+          "source": {
+            "type": "string",
+            "example": "homepage"
+          },
+          "agent": {
+            "type": "string",
+            "description": "User agent string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UpdateEntryRequest": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "type": "object",
+            "description": "Updated metadata"
+          },
+          "source": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          },
+          "agent": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TypeInfo": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "message"
+          },
+          "name": {
+            "type": "string",
+            "example": "Message"
+          },
+          "description": {
+            "type": "string",
+            "example": "User messages from homepage"
+          },
+          "notification_enabled": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "create_time": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AdminMessage": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Message"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "website": {
+                "type": "string"
+              },
+              "agent": {
+                "type": "string"
+              },
+              "update_time": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "admin_time": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "delete_time": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              },
+              "is_delete": {
+                "type": "boolean"
+              },
+              "is_show": {
+                "type": "boolean"
+              }
+            }
+          }
+        ]
+      },
+      "CreateMessageRequest": {
+        "type": "object",
+        "required": ["name", "email", "content"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john@example.com"
+          },
+          "content": {
+            "type": "string",
+            "example": "Hello, this is a test message"
+          },
+          "website": {
+            "type": "string",
+            "example": "https://example.com"
+          },
+          "agent": {
+            "type": "string",
+            "description": "User agent string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "Error message"
+                },
+                "status": {
+                  "type": "integer",
+                  "example": 400
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
