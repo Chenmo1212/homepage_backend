@@ -11,11 +11,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-@app.route('/', methods=['GET'])
-def index():
-    return "hello world"
-
-
 # ============ User Api ============
 
 @app.route('/messages', methods=['GET'])
