@@ -1,6 +1,7 @@
 from flask import Flask, render_template_string
 from flask_pymongo import PyMongo
 from app.auth import requires_auth
+import os
 
 
 app = Flask(__name__)
@@ -15,7 +16,6 @@ except ImportError as e:
     print(f"Warning: Could not load config file: {e}")
     print("Please create config_development.py or config_production.py with MONGO_URI")
     # Fallback to environment variable
-    import os
     app.config['MONGO_URI'] = os.getenv('MONGO_URI', 'mongodb://localhost:27017/homepage')
 
 app.debug = True
@@ -26,16 +26,43 @@ app.config['JSONIFY_MIMETYPE'] = 'application/json; charset=utf-8'
 
 mongo = PyMongo(app)
 
+# Get base path from config for Swagger UI
+# This is used to construct correct URLs in the Swagger UI
+def get_base_path():
+    """Get the base path from config, removing trailing slash"""
+    base_path = app.config.get('APPLICATION_ROOT', '/')
+    if base_path == '/':
+        return ''
+    return base_path.rstrip('/')
+
 # Serve swagger.json - Protected with authentication
 @app.route('/static/swagger.json')
 @requires_auth
 def swagger_json():
     import json
-    import os
+    from flask import request
     try:
         swagger_path = os.path.join(app.root_path, '..', 'static', 'swagger.json')
         with open(swagger_path, 'r') as f:
-            return json.load(f)
+            swagger_data = json.load(f)
+        
+        # Dynamically set the server URL based on the request
+        # This ensures Swagger uses the correct base URL
+        base_url = request.url_root.rstrip('/')
+        
+        # Update servers to include the current request's base URL
+        swagger_data['servers'] = [
+            {
+                "url": base_url,
+                "description": "Current server"
+            },
+            {
+                "url": "http://localhost:5000",
+                "description": "Development server"
+            }
+        ]
+        
+        return swagger_data
     except FileNotFoundError:
         return {'error': 'Swagger specification file not found'}, 404
     except json.JSONDecodeError as e:
@@ -49,6 +76,8 @@ def swagger_json():
 @app.route('/')
 @requires_auth
 def swagger_ui():
+    base_path = get_base_path()
+    
     return render_template_string('''
 <!DOCTYPE html>
 <html lang="en">
@@ -69,7 +98,7 @@ def swagger_ui():
     <script>
         window.onload = function() {
             const ui = SwaggerUIBundle({
-                url: "/static/swagger.json",
+                url: "{{ base_path }}/static/swagger.json",
                 dom_id: '#swagger-ui',
                 deepLinking: true,
                 presets: [
@@ -89,7 +118,7 @@ def swagger_ui():
     </script>
 </body>
 </html>
-    ''')
+    ''', base_path=base_path)
 
 from app.routes.entries import entries_bp
 from app.routes.admin import admin_bp
