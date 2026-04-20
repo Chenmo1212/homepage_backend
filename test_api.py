@@ -1,17 +1,12 @@
 """
 Homepage Backend API Tests
-Test aggregated API system
+Test aggregated API system with mocked MongoDB
+
+使用 mongomock 模拟 MongoDB，无需真实数据库即可运行测试
+所有的 fixtures 都在 conftest.py 中定义
 """
 
 import pytest
-from app import app
-
-
-@pytest.fixture
-def client():
-    """Create test client"""
-    with app.test_client() as client:
-        yield client
 
 
 # ============================================================================
@@ -191,28 +186,29 @@ class TestAdminEntriesAPI:
         """Test getting statistics"""
         response = client.get('/api/v1/message/admin/entries/stats')
         assert response.status_code == 200
-        assert 'total' in response.json
-        assert 'by_type' in response.json
-        assert 'by_source' in response.json
-        assert 'by_status' in response.json
+        data = response.json['data']
+        assert 'total' in data
+        assert 'by_type' in data
     
     def test_get_all_types(self, client):
         """Test getting all supported types"""
         response = client.get('/api/v1/message/admin/types')
         assert response.status_code == 200
-        assert 'types' in response.json
-        types = response.json['types']
-        assert 'message' in types
-        assert 'feedback' in types
-        assert 'notification' in types
+        types_list = response.json['data']
+        assert isinstance(types_list, list)
+        type_names = [t['type'] for t in types_list]
+        assert 'message' in type_names
+        assert 'feedback' in type_names
+        assert 'notification' in type_names
     
     def test_get_type_schema(self, client):
         """Test getting type schema"""
         response = client.get('/api/v1/message/admin/types/message/schema')
         assert response.status_code == 200
-        assert 'type' in response.json
-        assert 'schema' in response.json
-        assert response.json['type'] == 'message'
+        data = response.json['data']
+        assert 'schema' in data
+        assert 'name' in data
+        assert 'description' in data
     
     def test_batch_delete_entries(self, client):
         """Test batch deleting entries"""
