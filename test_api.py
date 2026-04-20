@@ -33,7 +33,7 @@ class TestEntriesAPI:
                 'website': 'https://test.com'
             }
         }
-        response = client.post('/api/v1/entries', json=payload)
+        response = client.post('/api/v1/message/entries', json=payload)
         assert response.status_code == 200
         assert 'data' in response.json
         assert 'id' in response.json['data']
@@ -52,7 +52,7 @@ class TestEntriesAPI:
                 'contact': 'user@example.com'
             }
         }
-        response = client.post('/api/v1/entries', json=payload)
+        response = client.post('/api/v1/message/entries', json=payload)
         assert response.status_code == 200
         assert 'data' in response.json
         assert 'id' in response.json['data']
@@ -69,7 +69,7 @@ class TestEntriesAPI:
                 'target_users': ['admin']
             }
         }
-        response = client.post('/api/v1/entries', json=payload)
+        response = client.post('/api/v1/message/entries', json=payload)
         assert response.status_code == 200
         assert 'data' in response.json
         assert 'id' in response.json['data']
@@ -81,7 +81,7 @@ class TestEntriesAPI:
             'source': 'test',
             'metadata': {}
         }
-        response = client.post('/api/v1/entries', json=payload)
+        response = client.post('/api/v1/message/entries', json=payload)
         assert response.status_code == 400
         assert 'error' in response.json
     
@@ -95,13 +95,13 @@ class TestEntriesAPI:
                 # Missing project_name, content, category
             }
         }
-        response = client.post('/api/v1/entries', json=payload)
+        response = client.post('/api/v1/message/entries', json=payload)
         assert response.status_code == 400
         assert 'error' in response.json
     
     def test_get_visible_entries(self, client):
         """Test getting visible entries"""
-        response = client.get('/api/v1/entries')
+        response = client.get('/api/v1/message/entries')
         assert response.status_code == 200
         assert 'data' in response.json
         assert 'pagination' in response.json
@@ -109,12 +109,12 @@ class TestEntriesAPI:
     def test_get_entries_filter_by_type(self, client):
         """Test filtering entries by type"""
         # Create entries of different types
-        client.post('/api/v1/entries', json={
+        client.post('/api/v1/message/entries', json={
             'type': 'message',
             'source': 'test',
             'metadata': {'name': 'User', 'email': 'user@test.com', 'content': 'Test'}
         })
-        client.post('/api/v1/entries', json={
+        client.post('/api/v1/message/entries', json={
             'type': 'feedback',
             'source': 'test',
             'metadata': {
@@ -124,20 +124,20 @@ class TestEntriesAPI:
         })
         
         # Filter by type
-        response = client.get('/api/v1/entries?type=message')
+        response = client.get('/api/v1/message/entries?type=message')
         assert response.status_code == 200
         # Note: May return empty list due to default is_show=False
         assert 'data' in response.json
     
     def test_get_entries_filter_by_source(self, client):
         """Test filtering entries by source"""
-        response = client.get('/api/v1/entries?source=homepage')
+        response = client.get('/api/v1/message/entries?source=homepage')
         assert response.status_code == 200
         assert 'data' in response.json
     
     def test_get_entries_pagination(self, client):
         """Test pagination functionality"""
-        response = client.get('/api/v1/entries?page=1&limit=10')
+        response = client.get('/api/v1/message/entries?page=1&limit=10')
         assert response.status_code == 200
         assert 'pagination' in response.json
         pagination = response.json['pagination']
@@ -151,14 +151,14 @@ class TestAdminEntriesAPI:
     
     def test_get_all_entries(self, client):
         """Test getting all entries (including hidden ones)"""
-        response = client.get('/api/v1/admin/entries')
+        response = client.get('/api/v1/message/admin/entries')
         assert response.status_code == 200
         assert 'data' in response.json
         assert 'pagination' in response.json
     
     def test_get_entries_filter_by_type(self, client):
         """Test admin filtering by type"""
-        response = client.get('/api/v1/admin/entries?type=message')
+        response = client.get('/api/v1/message/admin/entries?type=message')
         assert response.status_code == 200
         assert 'data' in response.json
     
@@ -174,7 +174,7 @@ class TestAdminEntriesAPI:
                 'content': 'Test'
             }
         }
-        response = client.post('/api/v1/entries', json=payload)
+        response = client.post('/api/v1/message/entries', json=payload)
         assert response.status_code == 200
         entry_id = response.json['data']['id']
         
@@ -183,13 +183,13 @@ class TestAdminEntriesAPI:
             'is_show': True,
             'is_read': True
         }
-        response = client.put(f'/api/v1/admin/entries/{entry_id}/status', json=update_payload)
+        response = client.put(f'/api/v1/message/admin/entries/{entry_id}/status', json=update_payload)
         assert response.status_code == 200
         assert 'msg' in response.json
     
     def test_get_entry_stats(self, client):
         """Test getting statistics"""
-        response = client.get('/api/v1/admin/entries/stats')
+        response = client.get('/api/v1/message/admin/entries/stats')
         assert response.status_code == 200
         assert 'total' in response.json
         assert 'by_type' in response.json
@@ -198,7 +198,7 @@ class TestAdminEntriesAPI:
     
     def test_get_all_types(self, client):
         """Test getting all supported types"""
-        response = client.get('/api/v1/admin/types')
+        response = client.get('/api/v1/message/admin/types')
         assert response.status_code == 200
         assert 'types' in response.json
         types = response.json['types']
@@ -208,7 +208,7 @@ class TestAdminEntriesAPI:
     
     def test_get_type_schema(self, client):
         """Test getting type schema"""
-        response = client.get('/api/v1/admin/types/message/schema')
+        response = client.get('/api/v1/message/admin/types/message/schema')
         assert response.status_code == 200
         assert 'type' in response.json
         assert 'schema' in response.json
@@ -219,7 +219,7 @@ class TestAdminEntriesAPI:
         # Create multiple entries
         entry_ids = []
         for i in range(3):
-            response = client.post('/api/v1/entries', json={
+            response = client.post('/api/v1/message/entries', json={
                 'type': 'message',
                 'source': 'test',
                 'metadata': {
@@ -232,7 +232,7 @@ class TestAdminEntriesAPI:
             entry_ids.append(response.json['data']['id'])
         
         # Batch delete
-        response = client.post('/api/v1/entries/batch-delete', json={'id_list': entry_ids})
+        response = client.post('/api/v1/message/entries/batch-delete', json={'id_list': entry_ids})
         assert response.status_code == 200
         assert 'msg' in response.json
 
@@ -277,12 +277,12 @@ class TestIntegration:
         
         created_ids = []
         for data in types_data:
-            response = client.post('/api/v1/entries', json=data)
+            response = client.post('/api/v1/message/entries', json=data)
             assert response.status_code == 200
             created_ids.append(response.json['data']['id'])
         
         # Verify all types were created successfully
-        response = client.get('/api/v1/admin/entries')
+        response = client.get('/api/v1/message/admin/entries')
         assert response.status_code == 200
         all_entries = response.json['data']
         
