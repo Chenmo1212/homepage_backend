@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request
-from app.models.entry import Entry
-from app.validators.schema_validator import validator
-from app.config.type_manager import type_manager
-from app.notifications.notification_service import send_notification
+from app.modules.homepage.models.entry import Entry
+from app.modules.homepage.validators.schema_validator import validator
+from app.modules.homepage.config.type_manager import type_manager
+from app.modules.homepage.notifications.notification_service import send_notification
 
 entries_bp = Blueprint('entries', __name__, url_prefix='/api/v1/entries')
 

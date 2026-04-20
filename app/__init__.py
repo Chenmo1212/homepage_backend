@@ -120,12 +120,6 @@ def swagger_ui():
 </html>
     ''', base_path=base_path)
 
-from app.routes.entries import entries_bp
-from app.routes.admin import admin_bp
-from app.routes.messages_compat import messages_compat_bp
-
-app.register_blueprint(entries_bp)
-app.register_blueprint(admin_bp)
-app.register_blueprint(messages_compat_bp)
-
-from app import legacy_routes
+# Register homepage module blueprints
+from app.modules.homepage import register_blueprints
+register_blueprints(app)

@@ -1,6 +1,6 @@
 from jsonschema import validate, ValidationError, FormatChecker
 from typing import Dict, Tuple
-from app.config.type_manager import type_manager
+from app.modules.homepage.config.type_manager import type_manager
 
 
 class SchemaValidator:

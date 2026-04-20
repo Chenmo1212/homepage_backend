@@ -2,7 +2,7 @@ import os
 import requests
 import json
 from typing import Dict, Optional
-from app.config.type_manager import type_manager
+from app.modules.homepage.config.type_manager import type_manager
 from dotenv import load_dotenv
 
 load_dotenv()

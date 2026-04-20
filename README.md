@@ -79,30 +79,44 @@ The system uses **Entry** as a unified data model. Each Entry contains:
 
 ### Directory Structure
 
+The project follows a **modular architecture** where business logic is organized into self-contained modules:
+
 ```
 homepage_backend/
 ├── app/
-│   ├── __init__.py                 # Flask app initialization
-│   ├── models/
-│   │   ├── entry.py               # Unified Entry model
-│   │   └── message.py             # Message model (backward compatible)
-│   ├── routes/
-│   │   ├── entries.py             # New API routes
-│   │   ├── admin.py               # Admin API routes
-│   │   └── messages_compat.py     # Compatible API routes
-│   ├── config/
-│   │   ├── type_manager.py        # Type manager
-│   │   └── entry_types.json       # Type configuration file
-│   ├── validators/
-│   │   └── schema_validator.py    # Schema validator
-│   └── notifications/
-│       └── notification_service.py # Notification service
-├── migrations/
-│   └── migrate_to_entries.py      # Data migration script
+│   ├── __init__.py                 # Flask app initialization & blueprint registration
+│   ├── auth.py                     # Shared authentication helpers
+│   ├── legacy_routes.py            # Legacy compatibility layer (deprecated)
+│   └── modules/                    # Business modules
+│       └── homepage/               # Homepage module (self-contained)
+│           ├── __init__.py         # Module initialization & blueprint registration
+│           ├── models/
+│           │   ├── entry.py        # Unified Entry model
+│           │   └── message.py      # Message model (backward compatible)
+│           ├── routes/
+│           │   ├── entries.py      # New API routes
+│           │   ├── admin.py        # Admin API routes
+│           │   └── messages_compat.py  # Compatible API routes
+│           ├── config/
+│           │   ├── type_manager.py     # Type manager
+│           │   └── entry_types.json    # Type configuration file
+│           ├── validators/
+│           │   └── schema_validator.py # Schema validator
+│           └── notifications/
+│               └── notification_service.py # Notification service
+├── static/
+│   └── swagger.json                # API documentation
 ├── config_development.py           # Development environment config
 ├── config_production.py            # Production environment config
-└── migrate_from_messages_db.py    # Cross-database migration tool
+├── requirements.txt                # Python dependencies
+└── app.py                          # Application entry point
 ```
+
+**Architecture Highlights:**
+- ✅ **Modular Design**: Each business domain is a self-contained module
+- ✅ **Clean Separation**: Global layer only handles shared infrastructure
+- ✅ **Easy Extension**: Add new modules without affecting existing ones
+- ✅ **Blueprint Registration**: Main app only knows about module registration, not implementation details
 
 ---
 
@@ -374,7 +388,7 @@ curl http://localhost:5001/admin/messages
 
 ### Adding New Types
 
-Edit `app/config/entry_types.json`:
+Edit `app/modules/homepage/config/entry_types.json`:
 
 ```json
 {
@@ -425,8 +439,8 @@ curl -X POST http://localhost:5001/api/v1/entries \
 ### Configure Notifications
 
 1. Configure Enterprise WeChat parameters in `.env`
-2. Enable notifications in `app/config/entry_types.json`
-3. Customize templates in `app/notifications/notification_service.py`
+2. Enable notifications in `app/modules/homepage/config/entry_types.json`
+3. Customize templates in `app/modules/homepage/notifications/notification_service.py`
 
 ### Notification Templates
 
