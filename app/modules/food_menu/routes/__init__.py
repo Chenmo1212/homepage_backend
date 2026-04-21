@@ -194,6 +194,46 @@ def get_dishes():
         }), 500
 
 
+@food_menu_bp.route('/dishes', methods=['POST'])
+def create_dish():
+    """Create a new custom dish."""
+    try:
+        dish_model, _, _ = get_models()
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['name', 'name_en', 'price', 'category']
+        is_valid, error_msg = validate_required_fields(data, required_fields)
+        
+        if not is_valid:
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 400
+        
+        # Validate price is positive
+        if data['price'] <= 0:
+            return jsonify({
+                'success': False,
+                'error': 'Price must be greater than 0'
+            }), 400
+        
+        # Create the dish
+        dish = dish_model.create(data)
+        
+        return jsonify({
+            'success': True,
+            'data': serialize_doc(dish),
+            'message': 'Dish created successfully'
+        }), 201
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @food_menu_bp.route('/dishes/<dish_id>', methods=['GET'])
 def get_dish(dish_id):
     """Get a single dish by ID."""
@@ -210,6 +250,74 @@ def get_dish(dish_id):
         return jsonify({
             'success': True,
             'data': serialize_doc(dish)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@food_menu_bp.route('/dishes/<dish_id>', methods=['PUT', 'PATCH'])
+def update_dish(dish_id):
+    """Update an existing dish."""
+    try:
+        dish_model, _, _ = get_models()
+        data = request.get_json()
+        
+        # Check if dish exists
+        dish = dish_model.find_by_object_id(dish_id)
+        if not dish:
+            return jsonify({
+                'success': False,
+                'error': 'Dish not found'
+            }), 404
+        
+        # Validate price if provided
+        if 'price' in data and data['price'] <= 0:
+            return jsonify({
+                'success': False,
+                'error': 'Price must be greater than 0'
+            }), 400
+        
+        # Update the dish
+        updated_dish = dish_model.update_by_object_id(dish_id, data)
+        
+        return jsonify({
+            'success': True,
+            'data': serialize_doc(updated_dish),
+            'message': 'Dish updated successfully'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@food_menu_bp.route('/dishes/<dish_id>', methods=['DELETE'])
+def delete_dish(dish_id):
+    """Delete a dish (soft delete by setting is_active to False)."""
+    try:
+        dish_model, _, _ = get_models()
+        
+        # Check if dish exists
+        dish = dish_model.find_by_object_id(dish_id)
+        if not dish:
+            return jsonify({
+                'success': False,
+                'error': 'Dish not found'
+            }), 404
+        
+        # Soft delete by setting is_active to False
+        updated_dish = dish_model.update_by_object_id(dish_id, {'is_active': False})
+        
+        return jsonify({
+            'success': True,
+            'data': serialize_doc(updated_dish),
+            'message': 'Dish deleted successfully'
         }), 200
         
     except Exception as e:
