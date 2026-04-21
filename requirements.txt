@@ -29,3 +29,5 @@ jsonschema==4.17.3
 mongomock==4.2.0.post1
 pytest-mock==3.10.0
 setuptools>=65.0.0
+Flask-CORS==4.0.0
+gunicorn==21.2.0

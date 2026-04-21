@@ -121,5 +121,9 @@ def swagger_ui():
     ''', base_path=base_path)
 
 # Register homepage module blueprints
-from app.modules.homepage import register_blueprints
-register_blueprints(app)
+from app.modules.homepage import register_blueprints as register_homepage_blueprints
+register_homepage_blueprints(app)
+
+# Register food menu module blueprints
+from app.modules.food_menu import register_blueprints as register_food_menu_blueprints
+register_food_menu_blueprints(app)
