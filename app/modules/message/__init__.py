@@ -1,6 +1,6 @@
 """Homepage module - Business logic for homepage entries and messages"""
 
-from app.modules.homepage.routes import entries_bp, admin_bp
+from app.modules.message.routes import entries_bp, admin_bp
 
 __all__ = ['entries_bp', 'admin_bp']
 

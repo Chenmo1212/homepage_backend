@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
-from app.modules.homepage.models.entry import Entry
-from app.modules.homepage.config.type_manager import type_manager
-from app.modules.homepage.validators.schema_validator import validator
+from app.modules.message.models.entry import Entry
+from app.modules.message.config.type_manager import type_manager
+from app.modules.message.validators.schema_validator import validator
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/v1/message/admin')
 

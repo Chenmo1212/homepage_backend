@@ -27,8 +27,8 @@ def get_models():
     Returns:
         tuple: (DishModel, OrderModel, StatsModel)
     """
-    from app import mongo
-    db = mongo.db
+    from app import food_menu_mongo
+    db = food_menu_mongo.db
     return DishModel(db), OrderModel(db), StatsModel(db)
 
 
@@ -137,11 +137,12 @@ def health_check():
         JSON response with health status
     """
     try:
-        from app import mongo
-        mongo.db.command('ping')
+        from app import food_menu_mongo
+        food_menu_mongo.db.command('ping')
         return jsonify({
             'status': 'healthy',
             'database': 'connected',
+            'database_name': 'food_menu_db',
             'service': 'Food Menu API'
         }), 200
     except Exception as e:

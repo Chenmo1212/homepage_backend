@@ -16,7 +16,9 @@ except ImportError as e:
     print(f"Warning: Could not load config file: {e}")
     print("Please create config_development.py or config_production.py with MONGO_URI")
     # Fallback to environment variable
-    app.config['MONGO_URI'] = os.getenv('MONGO_URI', 'mongodb://localhost:27017/homepage')
+    MONGO_URL = os.getenv('MONGO_URI',  'mongodb://localhost:27017')
+    app.config['MESSAGE_MONGO_URI'] = f'{MONGO_URL}/message_center'
+    app.config['FOOD_MENU_MONGO_URI'] = f'{MONGO_URL}/food_menu_db'
 
 app.debug = True
 
@@ -24,7 +26,9 @@ app.debug = True
 app.config['JSON_AS_ASCII'] = False
 app.config['JSONIFY_MIMETYPE'] = 'application/json; charset=utf-8'
 
-mongo = PyMongo(app)
+# Homepage module database connection
+message_mongo = PyMongo(app, uri=app.config.get('MESSAGE_MONGO_URI'))
+food_menu_mongo = PyMongo(app, uri=app.config.get('FOOD_MENU_MONGO_URI'))
 
 # Get base path from config for Swagger UI
 # This is used to construct correct URLs in the Swagger UI
@@ -387,9 +391,9 @@ def swagger_ui_food_menu():
 </html>
     ''', base_path=base_path)
 
-# Register homepage module blueprints
-from app.modules.homepage import register_blueprints as register_homepage_blueprints
-register_homepage_blueprints(app)
+# Register message module blueprints
+from app.modules.message import register_blueprints as register_message_blueprints
+register_message_blueprints(app)
 
 # Register food menu module blueprints
 from app.modules.food_menu import register_blueprints as register_food_menu_blueprints
