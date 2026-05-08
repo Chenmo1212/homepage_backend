@@ -122,6 +122,7 @@ homepage_backend/
 
 **示例：**
 ```bash
+# 使用兼容端点（推荐用于message类型）
 curl -X POST http://localhost:5001/messages \
   -H "Content-Type: application/json" \
   -d '{
@@ -129,6 +130,20 @@ curl -X POST http://localhost:5001/messages \
     "email": "zhangsan@example.com",
     "content": "你好，这是一条测试留言！",
     "website": "https://example.com"
+  }'
+
+# 或使用新的统一端点
+curl -X POST http://localhost:5001/api/v1/message/entries \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "message",
+    "source": "homepage",
+    "metadata": {
+      "name": "张三",
+      "email": "zhangsan@example.com",
+      "content": "你好，这是一条测试留言！",
+      "website": "https://example.com"
+    }
   }'
 ```
 
@@ -138,24 +153,22 @@ curl -X POST http://localhost:5001/messages \
 
 **必需字段：**
 - `project_name` (string): 项目名称
-- `title` (string): 反馈标题
 - `content` (string): 反馈内容
-- `category` (enum): 类别 - "bug" | "feature" | "improvement" | "question"
 
 **可选字段：**
 - `rating` (integer, 1-5): 评分
+- `category` (enum): 类别 - "bug" | "feature" | "improvement" | "question"
 - `contact` (string): 联系方式
 
 **示例：**
 ```bash
-curl -X POST http://localhost:5001/api/v1/entries \
+curl -X POST http://localhost:5001/api/v1/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "feedback",
     "source": "homepage",
     "metadata": {
       "project_name": "个人主页",
-      "title": "功能建议",
       "content": "希望能添加深色模式",
       "category": "feature",
       "rating": 5,
@@ -171,15 +184,14 @@ curl -X POST http://localhost:5001/api/v1/entries \
 **必需字段：**
 - `title` (string): 通知标题
 - `content` (string): 通知内容
-- `level` (enum): 级别 - "info" | "warning" | "error" | "success"
 
 **可选字段：**
-- `target_users` (array): 目标用户列表
-- `expire_time` (datetime): 过期时间
+- `priority` (enum): 优先级 - "high" | "medium" | "low" (默认: "medium")
+- `target_user` (string): 目标用户
 
 **示例：**
 ```bash
-curl -X POST http://localhost:5001/api/v1/entries \
+curl -X POST http://localhost:5001/api/v1/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "notification",
@@ -187,8 +199,8 @@ curl -X POST http://localhost:5001/api/v1/entries \
     "metadata": {
       "title": "系统维护通知",
       "content": "系统将于今晚22:00进行维护，预计持续2小时",
-      "level": "warning",
-      "target_users": ["admin", "user123"]
+      "priority": "high",
+      "target_user": "admin"
     }
   }'
 ```
@@ -203,7 +215,7 @@ curl -X POST http://localhost:5001/api/v1/entries \
 
 **获取可见entries**
 ```bash
-GET /api/v1/entries
+GET /api/v1/message/entries
 参数：
   - type: 类型过滤 (message/feedback/notification)
   - source: 来源过滤
@@ -212,12 +224,12 @@ GET /api/v1/entries
   - limit: 每页数量 (默认: 20)
 
 示例：
-curl "http://localhost:5001/api/v1/entries?type=feedback&source=homepage"
+curl "http://localhost:5001/api/v1/message/entries?type=feedback&source=homepage"
 ```
 
 **创建entry**
 ```bash
-POST /api/v1/entries
+POST /api/v1/message/entries
 Body: {
   "type": "message",
   "source": "homepage",
@@ -227,14 +239,14 @@ Body: {
 
 **获取单个entry**
 ```bash
-GET /api/v1/entries/{id}
+GET /api/v1/message/entries/{id}
 ```
 
 #### 管理端点
 
 **获取所有entries（包括隐藏的）**
 ```bash
-GET /api/v1/admin/entries
+GET /api/v1/message/admin/entries
 参数：
   - type: 类型过滤
   - source: 来源过滤
@@ -246,7 +258,7 @@ GET /api/v1/admin/entries
 
 **更新entry状态**
 ```bash
-PUT /api/v1/admin/entries/{id}/status
+PUT /api/v1/message/admin/entries/{id}/status
 Body: {
   "is_show": true,
   "is_delete": false,
@@ -256,7 +268,7 @@ Body: {
 
 **获取统计信息**
 ```bash
-GET /api/v1/admin/entries/stats
+GET /api/v1/message/admin/entries/stats
 返回：
 {
   "total": 100,
@@ -273,13 +285,13 @@ GET /api/v1/admin/entries/stats
 **类型管理**
 ```bash
 # 获取所有类型
-GET /api/v1/admin/types
+GET /api/v1/message/admin/types
 
 # 获取特定类型的schema
-GET /api/v1/admin/types/{type}/schema
+GET /api/v1/message/admin/types/{type}/schema
 
 # 创建新类型
-POST /api/v1/admin/types
+POST /api/v1/message/admin/types
 ```
 
 ### 向后兼容API
@@ -406,7 +418,7 @@ curl http://localhost:5001/admin/messages
 ### 使用新类型
 
 ```bash
-curl -X POST http://localhost:5001/api/v1/entries \
+curl -X POST http://localhost:5001/api/v1/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "custom_type",

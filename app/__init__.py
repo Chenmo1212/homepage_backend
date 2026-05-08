@@ -6,19 +6,17 @@ import os
 
 app = Flask(__name__)
 
-# Load the appropriate configuration based on the environment
+# Load configuration
 try:
-    if app.env == 'production':
+    flask_env = os.getenv('FLASK_ENV', '').lower()
+    if flask_env == 'production':
         app.config.from_object('config_production')
     else:
         app.config.from_object('config_development')
 except ImportError as e:
     print(f"Warning: Could not load config file: {e}")
     print("Please create config_development.py or config_production.py with MONGO_URI")
-    # Fallback to environment variable
-    MONGO_URL = os.getenv('MONGO_URI',  'mongodb://localhost:27017')
-    app.config['MESSAGE_MONGO_URI'] = f'{MONGO_URL}/message_center'
-    app.config['FOOD_MENU_MONGO_URI'] = f'{MONGO_URL}/food_menu_db'
+    raise
 
 app.debug = True
 

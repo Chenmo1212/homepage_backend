@@ -161,3 +161,4 @@ cython_debug/
 backup.json
 config_development.py
 config_production.py
+.DS_Store

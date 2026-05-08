@@ -1,7 +1,7 @@
 from app import message_mongo
 from datetime import datetime
-from bson import ObjectId
-from typing import Dict, List, Optional
+from bson.objectid import ObjectId
+from typing import Dict, List, Optional, Any, cast
 
 
 class Entry:
@@ -52,26 +52,30 @@ class Entry:
         
         if self.id:
             # Update existing entry
-            message_mongo.db.entries.update_one(
+            db = cast(Any, message_mongo.db)
+            db.entries.update_one(
                 {'_id': self.id},
                 {'$set': document}
             )
             return str(self.id)
         else:
             # Create new entry
-            result = message_mongo.db.entries.insert_one(document)
+            db = cast(Any, message_mongo.db)
+            result = db.entries.insert_one(document)
             return str(result.inserted_id)
     
     def delete(self):
         """Delete Entry"""
         if self.id:
-            message_mongo.db.entries.delete_one({'_id': self.id})
+            db = cast(Any, message_mongo.db)
+            db.entries.delete_one({'_id': self.id})
     
     @staticmethod
     def find_by_id(entry_id: str) -> Optional[Dict]:
         """Find Entry by ID"""
         try:
-            return message_mongo.db.entries.find_one({'_id': ObjectId(entry_id)})
+            db = cast(Any, message_mongo.db)
+            return db.entries.find_one({'_id': ObjectId(entry_id)})
         except Exception:
             return None
     
@@ -81,22 +85,24 @@ class Entry:
         filters = filters or {}
         skip = (page - 1) * limit
         
-        cursor = message_mongo.db.entries.find(filters).skip(skip).limit(limit).sort('timestamps.create_time', -1)
-        total = message_mongo.db.entries.count_documents(filters)
+        db = cast(Any, message_mongo.db)
+        cursor = db.entries.find(filters).skip(skip).limit(limit).sort('timestamps.create_time', -1)
+        total = db.entries.count_documents(filters)
         
         return list(cursor), total
     
     @staticmethod
     def find_visible(type: Optional[str] = None, source: Optional[str] = None) -> List[Dict]:
         """Find visible Entries"""
-        filters = {'status.is_show': True, 'status.is_delete': False}
+        filters: Dict[str, Any] = {'status.is_show': True, 'status.is_delete': False}
         
         if type:
             filters['type'] = type
         if source:
             filters['source'] = source
         
-        return list(message_mongo.db.entries.find(filters).sort('timestamps.create_time', -1))
+        db = cast(Any, message_mongo.db)
+        return list(db.entries.find(filters).sort('timestamps.create_time', -1))
     
     @staticmethod
     def update_status(entry_id: str, status_updates: Dict) -> bool:
@@ -112,7 +118,8 @@ class Entry:
         
         update_fields['timestamps.admin_time'] = datetime.now()
         
-        result = message_mongo.db.entries.update_one(
+        db = cast(Any, message_mongo.db)
+        result = db.entries.update_one(
             {'_id': ObjectId(entry_id)},
             {'$set': update_fields}
         )
@@ -123,7 +130,8 @@ class Entry:
     def delete_many(entry_ids: List[str]) -> int:
         """Batch delete Entries"""
         object_ids = [ObjectId(id) for id in entry_ids]
-        result = message_mongo.db.entries.delete_many({'_id': {'$in': object_ids}})
+        db = cast(Any, message_mongo.db)
+        result = db.entries.delete_many({'_id': {'$in': object_ids}})
         return result.deleted_count
     
     @staticmethod
@@ -151,7 +159,8 @@ class Entry:
             }}
         ]
         
-        results = list(message_mongo.db.entries.aggregate(pipeline))
+        db = cast(Any, message_mongo.db)
+        results = list(db.entries.aggregate(pipeline))
         
         stats = {
             'total': sum(r['count'] for r in results),

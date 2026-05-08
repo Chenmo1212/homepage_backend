@@ -136,6 +136,7 @@ For user messages, comments, etc.
 
 **Example:**
 ```bash
+# Using compatible endpoint (recommended for message type)
 curl -X POST http://localhost:5001/messages \
   -H "Content-Type: application/json" \
   -d '{
@@ -143,6 +144,20 @@ curl -X POST http://localhost:5001/messages \
     "email": "john@example.com",
     "content": "Hello, this is a test message!",
     "website": "https://example.com"
+  }'
+
+# Or using the new unified endpoint
+curl -X POST http://localhost:5001/api/v1/message/entries \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "message",
+    "source": "homepage",
+    "metadata": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "content": "Hello, this is a test message!",
+      "website": "https://example.com"
+    }
   }'
 ```
 
@@ -152,24 +167,22 @@ For project feedback, bug reports, feature requests, etc.
 
 **Required Fields:**
 - `project_name` (string): Project name
-- `title` (string): Feedback title
 - `content` (string): Feedback content
-- `category` (enum): Category - "bug" | "feature" | "improvement" | "question"
 
 **Optional Fields:**
 - `rating` (integer, 1-5): Rating
+- `category` (enum): Category - "bug" | "feature" | "improvement" | "question"
 - `contact` (string): Contact information
 
 **Example:**
 ```bash
-curl -X POST http://localhost:5001/api/v1/entries \
+curl -X POST http://localhost:5001/api/v1/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "feedback",
     "source": "homepage",
     "metadata": {
       "project_name": "Personal Homepage",
-      "title": "Feature Request",
       "content": "Please add dark mode",
       "category": "feature",
       "rating": 5,
@@ -185,15 +198,14 @@ For system notifications, announcements, etc.
 **Required Fields:**
 - `title` (string): Notification title
 - `content` (string): Notification content
-- `level` (enum): Level - "info" | "warning" | "error" | "success"
 
 **Optional Fields:**
-- `target_users` (array): Target user list
-- `expire_time` (datetime): Expiration time
+- `priority` (enum): Priority - "high" | "medium" | "low" (default: "medium")
+- `target_user` (string): Target user
 
 **Example:**
 ```bash
-curl -X POST http://localhost:5001/api/v1/entries \
+curl -X POST http://localhost:5001/api/v1/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "notification",
@@ -201,8 +213,8 @@ curl -X POST http://localhost:5001/api/v1/entries \
     "metadata": {
       "title": "System Maintenance Notice",
       "content": "System will be under maintenance tonight at 22:00, expected to last 2 hours",
-      "level": "warning",
-      "target_users": ["admin", "user123"]
+      "priority": "high",
+      "target_user": "admin"
     }
   }'
 ```
@@ -217,7 +229,7 @@ curl -X POST http://localhost:5001/api/v1/entries \
 
 **Get visible entries**
 ```bash
-GET /api/v1/entries
+GET /api/v1/message/entries
 Parameters:
   - type: Type filter (message/feedback/notification)
   - source: Source filter
@@ -226,12 +238,12 @@ Parameters:
   - limit: Items per page (default: 20)
 
 Example:
-curl "http://localhost:5001/api/v1/entries?type=feedback&source=homepage"
+curl "http://localhost:5001/api/v1/message/entries?type=feedback&source=homepage"
 ```
 
 **Create entry**
 ```bash
-POST /api/v1/entries
+POST /api/v1/message/entries
 Body: {
   "type": "message",
   "source": "homepage",
@@ -241,14 +253,14 @@ Body: {
 
 **Get single entry**
 ```bash
-GET /api/v1/entries/{id}
+GET /api/v1/message/entries/{id}
 ```
 
 #### Admin Endpoints
 
 **Get all entries (including hidden)**
 ```bash
-GET /api/v1/admin/entries
+GET /api/v1/message/admin/entries
 Parameters:
   - type: Type filter
   - source: Source filter
@@ -260,7 +272,7 @@ Parameters:
 
 **Update entry status**
 ```bash
-PUT /api/v1/admin/entries/{id}/status
+PUT /api/v1/message/admin/entries/{id}/status
 Body: {
   "is_show": true,
   "is_delete": false,
@@ -270,7 +282,7 @@ Body: {
 
 **Get statistics**
 ```bash
-GET /api/v1/admin/entries/stats
+GET /api/v1/message/admin/entries/stats
 Returns:
 {
   "total": 100,
@@ -287,13 +299,13 @@ Returns:
 **Type management**
 ```bash
 # Get all types
-GET /api/v1/admin/types
+GET /api/v1/message/admin/types
 
 # Get specific type schema
-GET /api/v1/admin/types/{type}/schema
+GET /api/v1/message/admin/types/{type}/schema
 
 # Create new type
-POST /api/v1/admin/types
+POST /api/v1/message/admin/types
 ```
 
 ### Backward Compatible API
@@ -420,7 +432,7 @@ Edit `app/modules/homepage/config/entry_types.json`:
 ### Using New Types
 
 ```bash
-curl -X POST http://localhost:5001/api/v1/entries \
+curl -X POST http://localhost:5001/api/v1/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "custom_type",
