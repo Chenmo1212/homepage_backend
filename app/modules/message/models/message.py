@@ -1,4 +1,4 @@
-from app import mongo
+from app import message_mongo
 from datetime import datetime
 from bson import ObjectId
 
@@ -21,7 +21,7 @@ class Message:
 
     def save(self):
         current_time = datetime.now()
-        result = mongo.db.messages.insert_one({
+        result = message_mongo.db.messages.insert_one({
             'name': self.name,
             'email': self.email,
             'website': self.website,
@@ -38,12 +38,12 @@ class Message:
         return inserted_id
 
     def delete(self):
-        mongo.db.messages.delete_one({'_id': ObjectId(self.id)})
+        message_mongo.db.messages.delete_one({'_id': ObjectId(self.id)})
 
     @staticmethod
     def get_all():
-        return mongo.db.messages.find()
+        return message_mongo.db.messages.find()
 
     @staticmethod
     def get_visible_list():
-        return mongo.db.messages.find({'is_show': True})
+        return message_mongo.db.messages.find({'is_show': True})

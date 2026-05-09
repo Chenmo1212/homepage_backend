@@ -79,30 +79,44 @@ The system uses **Entry** as a unified data model. Each Entry contains:
 
 ### Directory Structure
 
+The project follows a **modular architecture** where business logic is organized into self-contained modules:
+
 ```
 homepage_backend/
 ├── app/
-│   ├── __init__.py                 # Flask app initialization
-│   ├── models/
-│   │   ├── entry.py               # Unified Entry model
-│   │   └── message.py             # Message model (backward compatible)
-│   ├── routes/
-│   │   ├── entries.py             # New API routes
-│   │   ├── admin.py               # Admin API routes
-│   │   └── messages_compat.py     # Compatible API routes
-│   ├── config/
-│   │   ├── type_manager.py        # Type manager
-│   │   └── entry_types.json       # Type configuration file
-│   ├── validators/
-│   │   └── schema_validator.py    # Schema validator
-│   └── notifications/
-│       └── notification_service.py # Notification service
-├── migrations/
-│   └── migrate_to_entries.py      # Data migration script
+│   ├── __init__.py                 # Flask app initialization & blueprint registration
+│   ├── auth.py                     # Shared authentication helpers
+│   ├── legacy_routes.py            # Legacy compatibility layer (deprecated)
+│   └── modules/                    # Business modules
+│       └── homepage/               # Homepage module (self-contained)
+│           ├── __init__.py         # Module initialization & blueprint registration
+│           ├── models/
+│           │   ├── entry.py        # Unified Entry model
+│           │   └── message.py      # Message model (backward compatible)
+│           ├── routes/
+│           │   ├── entries.py      # New API routes
+│           │   ├── admin.py        # Admin API routes
+│           │   └── messages_compat.py  # Compatible API routes
+│           ├── config/
+│           │   ├── type_manager.py     # Type manager
+│           │   └── entry_types.json    # Type configuration file
+│           ├── validators/
+│           │   └── schema_validator.py # Schema validator
+│           └── notifications/
+│               └── notification_service.py # Notification service
+├── static/
+│   └── swagger.json                # API documentation
 ├── config_development.py           # Development environment config
 ├── config_production.py            # Production environment config
-└── migrate_from_messages_db.py    # Cross-database migration tool
+├── requirements.txt                # Python dependencies
+└── app.py                          # Application entry point
 ```
+
+**Architecture Highlights:**
+- ✅ **Modular Design**: Each business domain is a self-contained module
+- ✅ **Clean Separation**: Global layer only handles shared infrastructure
+- ✅ **Easy Extension**: Add new modules without affecting existing ones
+- ✅ **Blueprint Registration**: Main app only knows about module registration, not implementation details
 
 ---
 
@@ -122,6 +136,7 @@ For user messages, comments, etc.
 
 **Example:**
 ```bash
+# Using compatible endpoint (recommended for message type)
 curl -X POST http://localhost:5001/messages \
   -H "Content-Type: application/json" \
   -d '{
@@ -129,6 +144,20 @@ curl -X POST http://localhost:5001/messages \
     "email": "john@example.com",
     "content": "Hello, this is a test message!",
     "website": "https://example.com"
+  }'
+
+# Or using the new unified endpoint
+curl -X POST http://localhost:5001/api/v1/message/entries \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "message",
+    "source": "homepage",
+    "metadata": {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "content": "Hello, this is a test message!",
+      "website": "https://example.com"
+    }
   }'
 ```
 
@@ -138,24 +167,22 @@ For project feedback, bug reports, feature requests, etc.
 
 **Required Fields:**
 - `project_name` (string): Project name
-- `title` (string): Feedback title
 - `content` (string): Feedback content
-- `category` (enum): Category - "bug" | "feature" | "improvement" | "question"
 
 **Optional Fields:**
 - `rating` (integer, 1-5): Rating
+- `category` (enum): Category - "bug" | "feature" | "improvement" | "question"
 - `contact` (string): Contact information
 
 **Example:**
 ```bash
-curl -X POST http://localhost:5001/api/v1/entries \
+curl -X POST http://localhost:5001/api/v1/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "feedback",
     "source": "homepage",
     "metadata": {
       "project_name": "Personal Homepage",
-      "title": "Feature Request",
       "content": "Please add dark mode",
       "category": "feature",
       "rating": 5,
@@ -171,15 +198,14 @@ For system notifications, announcements, etc.
 **Required Fields:**
 - `title` (string): Notification title
 - `content` (string): Notification content
-- `level` (enum): Level - "info" | "warning" | "error" | "success"
 
 **Optional Fields:**
-- `target_users` (array): Target user list
-- `expire_time` (datetime): Expiration time
+- `priority` (enum): Priority - "high" | "medium" | "low" (default: "medium")
+- `target_user` (string): Target user
 
 **Example:**
 ```bash
-curl -X POST http://localhost:5001/api/v1/entries \
+curl -X POST http://localhost:5001/api/v1/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "notification",
@@ -187,8 +213,8 @@ curl -X POST http://localhost:5001/api/v1/entries \
     "metadata": {
       "title": "System Maintenance Notice",
       "content": "System will be under maintenance tonight at 22:00, expected to last 2 hours",
-      "level": "warning",
-      "target_users": ["admin", "user123"]
+      "priority": "high",
+      "target_user": "admin"
     }
   }'
 ```
@@ -203,7 +229,7 @@ curl -X POST http://localhost:5001/api/v1/entries \
 
 **Get visible entries**
 ```bash
-GET /api/v1/entries
+GET /api/v1/message/entries
 Parameters:
   - type: Type filter (message/feedback/notification)
   - source: Source filter
@@ -212,12 +238,12 @@ Parameters:
   - limit: Items per page (default: 20)
 
 Example:
-curl "http://localhost:5001/api/v1/entries?type=feedback&source=homepage"
+curl "http://localhost:5001/api/v1/message/entries?type=feedback&source=homepage"
 ```
 
 **Create entry**
 ```bash
-POST /api/v1/entries
+POST /api/v1/message/entries
 Body: {
   "type": "message",
   "source": "homepage",
@@ -227,14 +253,14 @@ Body: {
 
 **Get single entry**
 ```bash
-GET /api/v1/entries/{id}
+GET /api/v1/message/entries/{id}
 ```
 
 #### Admin Endpoints
 
 **Get all entries (including hidden)**
 ```bash
-GET /api/v1/admin/entries
+GET /api/v1/message/admin/entries
 Parameters:
   - type: Type filter
   - source: Source filter
@@ -246,7 +272,7 @@ Parameters:
 
 **Update entry status**
 ```bash
-PUT /api/v1/admin/entries/{id}/status
+PUT /api/v1/message/admin/entries/{id}/status
 Body: {
   "is_show": true,
   "is_delete": false,
@@ -256,7 +282,7 @@ Body: {
 
 **Get statistics**
 ```bash
-GET /api/v1/admin/entries/stats
+GET /api/v1/message/admin/entries/stats
 Returns:
 {
   "total": 100,
@@ -273,13 +299,13 @@ Returns:
 **Type management**
 ```bash
 # Get all types
-GET /api/v1/admin/types
+GET /api/v1/message/admin/types
 
 # Get specific type schema
-GET /api/v1/admin/types/{type}/schema
+GET /api/v1/message/admin/types/{type}/schema
 
 # Create new type
-POST /api/v1/admin/types
+POST /api/v1/message/admin/types
 ```
 
 ### Backward Compatible API
@@ -374,7 +400,7 @@ curl http://localhost:5001/admin/messages
 
 ### Adding New Types
 
-Edit `app/config/entry_types.json`:
+Edit `app/modules/homepage/config/entry_types.json`:
 
 ```json
 {
@@ -406,7 +432,7 @@ Edit `app/config/entry_types.json`:
 ### Using New Types
 
 ```bash
-curl -X POST http://localhost:5001/api/v1/entries \
+curl -X POST http://localhost:5001/api/v1/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "custom_type",
@@ -425,8 +451,8 @@ curl -X POST http://localhost:5001/api/v1/entries \
 ### Configure Notifications
 
 1. Configure Enterprise WeChat parameters in `.env`
-2. Enable notifications in `app/config/entry_types.json`
-3. Customize templates in `app/notifications/notification_service.py`
+2. Enable notifications in `app/modules/homepage/config/entry_types.json`
+3. Customize templates in `app/modules/homepage/notifications/notification_service.py`
 
 ### Notification Templates
 

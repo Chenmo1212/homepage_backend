@@ -26,14 +26,10 @@
     {
       "name": "Admin",
       "description": "Administrative endpoints"
-    },
-    {
-      "name": "Messages (Legacy)",
-      "description": "Backward compatible message endpoints"
     }
   ],
   "paths": {
-    "/api/v1/entries": {
+    "/api/v1/message/entries": {
       "get": {
         "tags": ["Entries"],
         "summary": "Get entries list",
@@ -176,7 +172,7 @@
         }
       }
     },
-    "/api/v1/entries/{entry_id}": {
+    "/api/v1/message/entries/{entry_id}": {
       "get": {
         "tags": ["Entries"],
         "summary": "Get single entry",
@@ -322,7 +318,7 @@
         }
       }
     },
-    "/api/v1/entries/batch-delete": {
+    "/api/v1/message/entries/batch-delete": {
       "post": {
         "tags": ["Entries"],
         "summary": "Batch delete entries",
@@ -377,7 +373,7 @@
         }
       }
     },
-    "/api/v1/admin/entries": {
+    "/api/v1/message/admin/entries": {
       "get": {
         "tags": ["Admin"],
         "summary": "Admin get all entries",
@@ -450,7 +446,7 @@
         }
       }
     },
-    "/api/v1/admin/entries/{entry_id}/status": {
+    "/api/v1/message/admin/entries/{entry_id}/status": {
       "put": {
         "tags": ["Admin"],
         "summary": "Update entry status",
@@ -517,7 +513,7 @@
         }
       }
     },
-    "/api/v1/admin/entries/stats": {
+    "/api/v1/message/admin/entries/stats": {
       "get": {
         "tags": ["Admin"],
         "summary": "Get statistics",
@@ -567,7 +563,7 @@
         }
       }
     },
-    "/api/v1/admin/types": {
+    "/api/v1/message/admin/types": {
       "get": {
         "tags": ["Admin"],
         "summary": "Get all supported types",
@@ -655,7 +651,7 @@
         }
       }
     },
-    "/api/v1/admin/types/{type_name}/schema": {
+    "/api/v1/message/admin/types/{type_name}/schema": {
       "get": {
         "tags": ["Admin"],
         "summary": "Get type schema",
@@ -701,7 +697,7 @@
         }
       }
     },
-    "/api/v1/admin/types/{type_name}": {
+    "/api/v1/message/admin/types/{type_name}": {
       "put": {
         "tags": ["Admin"],
         "summary": "Update type configuration",
@@ -759,257 +755,6 @@
             "$ref": "#/components/responses/Error"
           },
           "404": {
-            "$ref": "#/components/responses/Error"
-          },
-          "500": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/messages": {
-      "get": {
-        "tags": ["Messages (Legacy)"],
-        "summary": "Get visible messages",
-        "description": "Backward compatible endpoint to get visible messages",
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/Message"
-                      }
-                    },
-                    "status": {
-                      "type": "integer",
-                      "example": 200
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      },
-      "post": {
-        "tags": ["Messages (Legacy)"],
-        "summary": "Create new message",
-        "description": "Backward compatible endpoint to create a message",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateMessageRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Message created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "msg": {
-                      "type": "string",
-                      "example": "Message created successfully"
-                    },
-                    "data": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "status": {
-                      "type": "integer",
-                      "example": 200
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "500": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/admin/messages": {
-      "get": {
-        "tags": ["Messages (Legacy)"],
-        "summary": "Admin get all messages",
-        "description": "Backward compatible endpoint to get all messages",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 1
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "default": 100
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/AdminMessage"
-                      }
-                    },
-                    "status": {
-                      "type": "integer",
-                      "example": 200
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/admin/messages/{message_id}/status": {
-      "put": {
-        "tags": ["Messages (Legacy)"],
-        "summary": "Update message status",
-        "description": "Backward compatible endpoint to update message status",
-        "parameters": [
-          {
-            "name": "message_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "is_show": {
-                    "type": "boolean"
-                  },
-                  "is_delete": {
-                    "type": "boolean"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Status updated successfully"
-          },
-          "400": {
-            "$ref": "#/components/responses/Error"
-          },
-          "404": {
-            "$ref": "#/components/responses/Error"
-          },
-          "500": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/admin/messages/{message_id}": {
-      "delete": {
-        "tags": ["Messages (Legacy)"],
-        "summary": "Delete message",
-        "description": "Backward compatible endpoint to delete a message",
-        "parameters": [
-          {
-            "name": "message_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Message deleted successfully"
-          },
-          "404": {
-            "$ref": "#/components/responses/Error"
-          },
-          "500": {
-            "$ref": "#/components/responses/Error"
-          }
-        }
-      }
-    },
-    "/admin/messages/delete": {
-      "post": {
-        "tags": ["Messages (Legacy)"],
-        "summary": "Batch delete messages",
-        "description": "Backward compatible endpoint to delete multiple messages",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": ["id_list"],
-                "properties": {
-                  "id_list": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Messages deleted successfully"
-          },
-          "400": {
             "$ref": "#/components/responses/Error"
           },
           "500": {
@@ -1197,91 +942,6 @@
           "notification_enabled": {
             "type": "boolean",
             "example": true
-          }
-        }
-      },
-      "Message": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "content": {
-            "type": "string"
-          },
-          "create_time": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "AdminMessage": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Message"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "website": {
-                "type": "string"
-              },
-              "agent": {
-                "type": "string"
-              },
-              "update_time": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "admin_time": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "delete_time": {
-                "type": "string",
-                "format": "date-time",
-                "nullable": true
-              },
-              "is_delete": {
-                "type": "boolean"
-              },
-              "is_show": {
-                "type": "boolean"
-              }
-            }
-          }
-        ]
-      },
-      "CreateMessageRequest": {
-        "type": "object",
-        "required": ["name", "email", "content"],
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "John Doe"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "john@example.com"
-          },
-          "content": {
-            "type": "string",
-            "example": "Hello, this is a test message"
-          },
-          "website": {
-            "type": "string",
-            "example": "https://example.com"
-          },
-          "agent": {
-            "type": "string",
-            "description": "User agent string"
           }
         }
       }

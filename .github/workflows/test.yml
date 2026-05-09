@@ -1,0 +1,56 @@
+name: Run Tests
+run-name: ${{ github.actor }} is running tests 🧪
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10']
+    
+    steps:
+      - name: Checkout code 🔎
+        uses: actions/checkout@v3
+      
+      - name: Set up Python ${{ matrix.python-version }} 🐍
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+      
+      - name: Install dependencies 📦
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run tests with pytest 🧪
+        run: |
+          pytest test_api.py -v --tb=short --color=yes
+        env:
+          FLASK_ENV: testing
+      
+      - name: Generate test report 📊
+        if: always()
+        run: |
+          pytest test_api.py --tb=short --color=yes -v > test_report.txt 2>&1 || true
+          cat test_report.txt
+      
+      - name: Upload test report 📤
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report-python-${{ matrix.python-version }}
+          path: test_report.txt
+
+# Made with Bob
