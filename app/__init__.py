@@ -70,11 +70,14 @@ def serve_swagger_json(filename):
         
         # Dynamically set the server URL based on the current request
         # This ensures Swagger UI always uses the correct base URL
+        # Include the base path for subdirectory deployments
         base_url = request.url_root.rstrip('/')
+        base_path = get_base_path()
+        full_url = f"{base_url}{base_path}"
         
         swagger_data['servers'] = [
             {
-                "url": base_url,
+                "url": full_url,
                 "description": "Current server"
             }
         ]
