@@ -1,7 +1,8 @@
-from flask import Flask, render_template_string
+from flask import Flask, render_template_string, request
 from flask_pymongo import PyMongo
 from app.auth import requires_auth
 import os
+import json
 
 
 app = Flask(__name__)
@@ -37,30 +38,38 @@ def get_base_path():
         return ''
     return base_path.rstrip('/')
 
-# Serve swagger.json - Protected with authentication
-@app.route('/static/swagger.json')
-@requires_auth
-def swagger_json():
-    import json
-    from flask import request
+
+# Swagger API configurations - list of swagger JSON files to serve
+SWAGGER_FILES = [
+    'swagger.json',
+    'swagger_food_menu.json',
+    'swagger_blog.json'
+]
+
+
+def serve_swagger_json(filename):
+    """
+    Generic function to serve swagger JSON files with dynamic server configuration.
+    
+    Args:
+        filename: Name of the swagger JSON file
+    
+    Returns:
+        JSON response with swagger data or error
+    """
     try:
-        swagger_path = os.path.join(app.root_path, '..', 'static', 'swagger.json')
+        swagger_path = os.path.join(app.root_path, '..', 'static', filename)
         with open(swagger_path, 'r') as f:
             swagger_data = json.load(f)
         
-        # Dynamically set the server URL based on the request
-        # This ensures Swagger uses the correct base URL
+        # Dynamically set the server URL based on the current request
+        # This ensures Swagger UI always uses the correct base URL
         base_url = request.url_root.rstrip('/')
         
-        # Update servers to include the current request's base URL
         swagger_data['servers'] = [
             {
                 "url": base_url,
                 "description": "Current server"
-            },
-            {
-                "url": "http://localhost:5000",
-                "description": "Development server"
             }
         ]
         
@@ -74,41 +83,122 @@ def swagger_json():
     except Exception as e:
         return {'error': f'Error loading swagger specification: {str(e)}'}, 500
 
-# Serve swagger_food_menu.json - Protected with authentication
-@app.route('/static/swagger_food_menu.json')
-@requires_auth
-def swagger_food_menu_json():
-    import json
-    from flask import request
-    try:
-        swagger_path = os.path.join(app.root_path, '..', 'static', 'swagger_food_menu.json')
-        with open(swagger_path, 'r') as f:
-            swagger_data = json.load(f)
-        
-        # Dynamically set the server URL based on the request
-        base_url = request.url_root.rstrip('/')
-        
-        # Update servers to include the current request's base URL
-        swagger_data['servers'] = [
-            {
-                "url": base_url,
-                "description": "Current server"
-            },
-            {
-                "url": "http://localhost:5002",
-                "description": "Development server"
-            }
-        ]
-        
-        return swagger_data
-    except FileNotFoundError:
-        return {'error': 'Swagger specification file not found'}, 404
-    except json.JSONDecodeError as e:
-        return {'error': f'Invalid JSON in swagger file: {str(e)}'}, 500
-    except PermissionError:
-        return {'error': 'Permission denied reading swagger file'}, 500
-    except Exception as e:
-        return {'error': f'Error loading swagger specification: {str(e)}'}, 500
+
+# Dynamically create routes for each swagger file
+for swagger_file in SWAGGER_FILES:
+    # Use a factory function to properly capture the filename in closure
+    def create_swagger_route(filename):
+        @requires_auth
+        def swagger_route():
+            return serve_swagger_json(filename)
+        # Set unique function name before registering
+        swagger_route.__name__ = f'swagger_{filename.replace(".", "_").replace("-", "_")}'
+        return swagger_route
+    
+    # Register the route with Flask
+    route_func = create_swagger_route(swagger_file)
+    app.add_url_rule(f'/static/{swagger_file}', view_func=route_func)
+
+
+# API documentation metadata
+API_DOCS = [
+    {
+        'route': 'homepage',
+        'title': 'Homepage Backend API',
+        'icon': '📝',
+        'description': 'A flexible content management API for handling various entry types with validation and notifications',
+        'swagger_file': 'swagger.json'
+    },
+    {
+        'route': 'food-menu',
+        'title': 'Food Menu API',
+        'icon': '🍽️',
+        'description': 'API for managing food menu dishes and orders',
+        'swagger_file': 'swagger_food_menu.json'
+    },
+    {
+        'route': 'blog',
+        'title': 'Blog API',
+        'icon': '📰',
+        'description': 'A simple API for blog operations',
+        'swagger_file': 'swagger_blog.json'
+    }
+]
+
+
+def render_swagger_ui(title, swagger_file):
+    """
+    Generic function to render Swagger UI page.
+    
+    Args:
+        title: Page title
+        swagger_file: Name of the swagger JSON file
+    
+    Returns:
+        Rendered HTML template
+    """
+    base_path = get_base_path()
+    return render_template_string('''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css">
+    <style>
+        html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
+        *, *:before, *:after { box-sizing: inherit; }
+        body { margin:0; padding:0; }
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-family: sans-serif;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: background 0.3s ease;
+        }
+        .back-link:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <a href="{{ base_path }}/" class="back-link">← Back to API List</a>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            const ui = SwaggerUIBundle({
+                url: "{{ base_path }}/static/{{ swagger_file }}",
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                docExpansion: "list",
+                defaultModelsExpandDepth: 3,
+                displayRequestDuration: true
+            });
+            window.ui = ui;
+        };
+    </script>
+</body>
+</html>
+    ''', base_path=base_path, title=title, swagger_file=swagger_file)
+
 
 # API Documentation Landing Page - Protected with authentication
 @app.route('/')
@@ -234,17 +324,13 @@ def api_docs_index():
         </div>
         
         <div class="api-list">
-            <a href="{{ base_path }}/docs/homepage" class="api-card">
-                <h2>📝 Homepage Backend API</h2>
-                <p>A flexible content management API for handling various entry types with validation and notifications</p>
+            {% for api in apis %}
+            <a href="{{ base_path }}/docs/{{ api.route }}" class="api-card">
+                <h2>{{ api.icon }} {{ api.title }}</h2>
+                <p>{{ api.description }}</p>
                 <span class="badge">OpenAPI 3.0</span>
             </a>
-            
-            <a href="{{ base_path }}/docs/food-menu" class="api-card">
-                <h2>🍽️ Food Menu API</h2>
-                <p>API for managing food menu dishes and orders</p>
-                <span class="badge">OpenAPI 3.0</span>
-            </a>
+            {% endfor %}
         </div>
         
         <div class="footer">
@@ -253,141 +339,24 @@ def api_docs_index():
     </div>
 </body>
 </html>
-    ''', base_path=base_path)
+    ''', base_path=base_path, apis=API_DOCS)
 
-# Homepage API Swagger UI - Protected with authentication
-@app.route('/docs/homepage')
-@requires_auth
-def swagger_ui_homepage():
-    base_path = get_base_path()
-    
-    return render_template_string('''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Homepage Backend API Documentation</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css">
-    <style>
-        html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
-        *, *:before, *:after { box-sizing: inherit; }
-        body { margin:0; padding:0; }
-        .back-link {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 9999;
-            background: #667eea;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-family: sans-serif;
-            font-weight: 500;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            transition: background 0.3s ease;
-        }
-        .back-link:hover {
-            background: #5568d3;
-        }
-    </style>
-</head>
-<body>
-    <a href="{{ base_path }}/" class="back-link">← Back to API List</a>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
-    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
-    <script>
-        window.onload = function() {
-            const ui = SwaggerUIBundle({
-                url: "{{ base_path }}/static/swagger.json",
-                dom_id: '#swagger-ui',
-                deepLinking: true,
-                presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIStandalonePreset
-                ],
-                plugins: [
-                    SwaggerUIBundle.plugins.DownloadUrl
-                ],
-                layout: "StandaloneLayout",
-                docExpansion: "list",
-                defaultModelsExpandDepth: 3,
-                displayRequestDuration: true
-            });
-            window.ui = ui;
-        };
-    </script>
-</body>
-</html>
-    ''', base_path=base_path)
 
-# Food Menu API Swagger UI - Protected with authentication
-@app.route('/docs/food-menu')
-@requires_auth
-def swagger_ui_food_menu():
-    base_path = get_base_path()
+# Dynamically create Swagger UI routes for each API
+for api_doc in API_DOCS:
+    # Use a factory function to properly capture the api_doc in closure
+    def create_swagger_ui_route(api):
+        @requires_auth
+        def swagger_ui():
+            return render_swagger_ui(f'{api["title"]} Documentation', api['swagger_file'])
+        # Set unique function name before registering
+        swagger_ui.__name__ = f'swagger_ui_{api["route"].replace("-", "_")}'
+        return swagger_ui
     
-    return render_template_string('''
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Food Menu API Documentation</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css">
-    <style>
-        html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
-        *, *:before, *:after { box-sizing: inherit; }
-        body { margin:0; padding:0; }
-        .back-link {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 9999;
-            background: #667eea;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-family: sans-serif;
-            font-weight: 500;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            transition: background 0.3s ease;
-        }
-        .back-link:hover {
-            background: #5568d3;
-        }
-    </style>
-</head>
-<body>
-    <a href="{{ base_path }}/" class="back-link">← Back to API List</a>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
-    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
-    <script>
-        window.onload = function() {
-            const ui = SwaggerUIBundle({
-                url: "{{ base_path }}/static/swagger_food_menu.json",
-                dom_id: '#swagger-ui',
-                deepLinking: true,
-                presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIStandalonePreset
-                ],
-                plugins: [
-                    SwaggerUIBundle.plugins.DownloadUrl
-                ],
-                layout: "StandaloneLayout",
-                docExpansion: "list",
-                defaultModelsExpandDepth: 3,
-                displayRequestDuration: true
-            });
-            window.ui = ui;
-        };
-    </script>
-</body>
-</html>
-    ''', base_path=base_path)
+    # Register the route with Flask
+    route_func = create_swagger_ui_route(api_doc)
+    app.add_url_rule(f'/docs/{api_doc["route"]}', view_func=route_func)
+
 
 # Register message module blueprints
 from app.modules.message import register_blueprints as register_message_blueprints
@@ -396,3 +365,7 @@ register_message_blueprints(app)
 # Register food menu module blueprints
 from app.modules.food_menu import register_blueprints as register_food_menu_blueprints
 register_food_menu_blueprints(app)
+
+# Register blog module blueprints
+from app.modules.blog import register_blueprints as register_blog_blueprints
+register_blog_blueprints(app)

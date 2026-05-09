@@ -1,0 +1,163 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Blog API",
+    "description": "A simple API for blog password verification",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.chenmo1212.cn",
+      "description": "Production server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Blog",
+      "description": "Blog password verification endpoints"
+    }
+  ],
+  "paths": {
+    "/api/v1/blog/verify": {
+      "post": {
+        "tags": ["Blog"],
+        "summary": "Verify blog post password",
+        "description": "Verify password for accessing a protected blog post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["password"],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "Password to access the blog post",
+                    "example": "password"
+                  }
+                }
+              },
+              "example": {
+                "password": "password"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password verification successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 200
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "status": 200
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Missing required fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Missing required fields: postId and password"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 400
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Incorrect password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Incorrect password"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 401
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found - Post does not exist",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Post not found"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 404
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Internal server error"
+                    },
+                    "status": {
+                      "type": "integer",
+                      "example": 500
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
