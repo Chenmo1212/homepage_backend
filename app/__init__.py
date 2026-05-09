@@ -38,10 +38,8 @@ food_menu_mongo = PyMongo(app, uri=app.config.get('FOOD_MENU_MONGO_URI'))
 # Get base path from config for Swagger UI
 # This is used to construct correct URLs in the Swagger UI
 def get_base_path():
-    """Get the base path from config, removing trailing slash"""
-    base_path = app.config.get('APPLICATION_ROOT', '/')
-    if base_path == '/':
-        return ''
+    """Get the base path from config for Swagger UI URLs"""
+    base_path = app.config.get('SWAGGER_BASE_PATH', '')
     return base_path.rstrip('/')
 
 
@@ -185,21 +183,27 @@ def render_swagger_ui(title, swagger_file):
     <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
     <script>
         window.onload = function() {
+            // Get the current origin (protocol + domain + port)
+            const origin = window.location.origin;
+            // Construct the full URL with base path
+            const swaggerUrl = origin + "{{ base_path }}/static/{{ swagger_file }}";
+            
             const ui = SwaggerUIBundle({
-                url: "{{ base_path }}/static/{{ swagger_file }}",
+                url: swaggerUrl,
                 dom_id: '#swagger-ui',
                 deepLinking: true,
                 presets: [
                     SwaggerUIBundle.presets.apis,
                     SwaggerUIStandalonePreset
                 ],
-                plugins: [
-                    SwaggerUIBundle.plugins.DownloadUrl
-                ],
+                // Remove DownloadUrl plugin to prevent validation errors with subdirectory deployment
+                plugins: [],
                 layout: "StandaloneLayout",
                 docExpansion: "list",
                 defaultModelsExpandDepth: 3,
-                displayRequestDuration: true
+                displayRequestDuration: true,
+                // Disable validator to prevent it from trying to fetch the spec from the wrong URL
+                validatorUrl: null
             });
             window.ui = ui;
         };
