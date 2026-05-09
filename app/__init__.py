@@ -1,13 +1,19 @@
 from flask import Flask, render_template_string, request
 from flask_pymongo import PyMongo
 from app.auth import requires_auth
+from dotenv import load_dotenv
 import os
 import json
 
+# Load environment variables from .env file
+# This will load variables from .env file into os.environ
+# If .env file doesn't exist, it will silently continue
+load_dotenv()
 
 app = Flask(__name__)
 
-# Load configuration
+# Load configuration based on FLASK_ENV environment variable
+# FLASK_ENV can be set in .env file or as a system environment variable
 try:
     flask_env = os.getenv('FLASK_ENV', '').lower()
     if flask_env == 'production':
