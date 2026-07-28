@@ -433,3 +433,7 @@ register_food_menu_blueprints(app)
 # Register blog module blueprints
 from app.modules.blog import register_blueprints as register_blog_blueprints
 register_blog_blueprints(app)
+
+# Register DDT OTA module blueprints
+from app.modules.ddt_ota import register_blueprints as register_ddt_ota_blueprints
+register_ddt_ota_blueprints(app)
