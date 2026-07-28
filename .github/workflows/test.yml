@@ -27,6 +27,16 @@ jobs:
       - name: Step 3 - Install dependencies 💡
         run: pip install -r requirements.txt
 
+      - name: Step 3.5 - Create test config 📝
+        run: |
+          printf '%s\n' \
+            "MONGO_URI = 'mongodb://127.0.0.1:27017'" \
+            "APPLICATION_ROOT = ''" \
+            "SWAGGER_USERNAME = 'testuser'" \
+            "SWAGGER_PASSWORD = 'testpass'" \
+            "ENCRYPTION_PASSWORD = 'test_secret_123'" \
+            > config_development.py
+
       - name: Step 4 - Run tests 🧪
         id: run_tests
         run: |
