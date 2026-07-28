@@ -19,6 +19,8 @@ def _db():
 def ensure_indexes():
     """Create all required indexes (idempotent — safe to call on startup)."""
     db = _db()
+    if db is None:
+        raise RuntimeError('DDT_OTA_MONGO_URI is not configured — cannot create indexes')
 
     # ddt_ota_checks: TTL 90 days, query indexes
     db.ddt_ota_checks.create_index('checked_at', expireAfterSeconds=90 * 86400)

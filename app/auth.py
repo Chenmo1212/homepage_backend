@@ -227,7 +227,8 @@ def requires_auth(f):
     """
     @wraps(f)
     def decorated(*args, **kwargs):
-        client_ip = request.remote_addr
+        client_ip = (request.headers.get('X-Forwarded-For', '').split(',')[0].strip()
+                     or request.remote_addr)
         
         # Check if IP is blocked
         is_blocked, blocked_until = is_ip_blocked(client_ip)

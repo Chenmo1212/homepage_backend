@@ -24,7 +24,7 @@ ddt_ota_bp = Blueprint('ddt_ota', __name__, url_prefix='/ddt')
 
 def fetch_latest_bundle():
     """Fetch version.json from Qiniu CDN and return its parsed content."""
-    resp = requests.get(VERSION_JSON_URL, timeout=5)
+    resp = requests.get(VERSION_JSON_URL, timeout=5, headers={"Cache-Control": "no-cache"})
     resp.raise_for_status()
     return resp.json()
 
