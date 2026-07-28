@@ -68,8 +68,10 @@ def serve_swagger_json(filename):
         
         # Dynamically set the server URL based on the current request
         # This ensures Swagger UI always uses the correct base URL
-        # Include the base path for subdirectory deployments
-        base_url = request.url_root.rstrip('/')
+        # X-Forwarded-Proto is set by nginx to preserve the original scheme (http/https)
+        # request.url_root alone always returns http:// because nginx talks to Flask over HTTP internally
+        proto = request.headers.get('X-Forwarded-Proto', request.scheme)
+        base_url = f"{proto}://{request.host}"
         base_path = get_base_path()
         full_url = f"{base_url}{base_path}"
         
