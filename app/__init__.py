@@ -34,6 +34,7 @@ app.config['JSONIFY_MIMETYPE'] = 'application/json; charset=utf-8'
 # Homepage module database connection
 message_mongo = PyMongo(app, uri=app.config.get('MESSAGE_MONGO_URI'))
 food_menu_mongo = PyMongo(app, uri=app.config.get('FOOD_MENU_MONGO_URI'))
+ddt_ota_mongo = PyMongo(app, uri=app.config.get('DDT_OTA_MONGO_URI'))
 
 # Get base path from config for Swagger UI
 # This is used to construct correct URLs in the Swagger UI
@@ -433,3 +434,7 @@ register_food_menu_blueprints(app)
 # Register blog module blueprints
 from app.modules.blog import register_blueprints as register_blog_blueprints
 register_blog_blueprints(app)
+
+# Register DDT OTA module blueprints
+from app.modules.ddt_ota import register_blueprints as register_ddt_ota_blueprints
+register_ddt_ota_blueprints(app)
