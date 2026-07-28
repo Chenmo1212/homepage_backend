@@ -1,11 +1,11 @@
 name: Run Tests
-run-name: ${{ github.actor }} is running tests 🧪
-
+run-name: ${{ github.actor }} is running tests on ${{ github.ref_name }} 🧪
 on:
   push:
     branches:
       - main
       - develop
+      - convert
   pull_request:
     branches:
       - main
@@ -14,43 +14,77 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        python-version: ['3.8', '3.9', '3.10']
-    
     steps:
-      - name: Checkout code 🔎
-        uses: actions/checkout@v3
-      
-      - name: Set up Python ${{ matrix.python-version }} 🐍
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-      
-      - name: Install dependencies 📦
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      
-      - name: Run tests with pytest 🧪
-        run: |
-          pytest test_api.py -v --tb=short --color=yes
-        env:
-          FLASK_ENV: testing
-      
-      - name: Generate test report 📊
-        if: always()
-        run: |
-          pytest test_api.py --tb=short --color=yes -v > test_report.txt 2>&1 || true
-          cat test_report.txt
-      
-      - name: Upload test report 📤
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-report-python-${{ matrix.python-version }}
-          path: test_report.txt
+      - name: Step 1 - Checkout code 🔎
+        uses: actions/checkout@v4
 
-# Made with Bob
+      - name: Step 2 - Set up Python 🐍
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Step 3 - Install dependencies 💡
+        run: pip install -r requirements.txt
+
+      - name: Step 3.5 - Create test config 📝
+        run: |
+          printf '%s\n' \
+            "MONGO_URI = 'mongodb://127.0.0.1:27017'" \
+            "APPLICATION_ROOT = ''" \
+            "SWAGGER_USERNAME = 'testuser'" \
+            "SWAGGER_PASSWORD = 'testpass'" \
+            "ENCRYPTION_PASSWORD = 'test_secret_123'" \
+            > config_development.py
+
+      - name: Step 4 - Run tests 🧪
+        id: run_tests
+        run: |
+          set -o pipefail
+          pytest tests/ -v --tb=short \
+            --junit-xml=test-results.xml \
+            2>&1 | tee test-output.txt
+
+      - name: Step 5 - Build test summary 📊
+        if: always()
+        id: summary
+        run: |
+          # Parse JUnit XML for counts
+          if [ -f test-results.xml ]; then
+            TESTS=$(python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('test-results.xml')
+          root = tree.getroot()
+          suite = root if root.tag == 'testsuite' else root.find('testsuite')
+          tests    = int(suite.attrib.get('tests', 0))
+          failures = int(suite.attrib.get('failures', 0))
+          errors   = int(suite.attrib.get('errors', 0))
+          skipped  = int(suite.attrib.get('skipped', 0))
+          passed   = tests - failures - errors - skipped
+          print(f'{tests},{passed},{failures},{errors},{skipped}')
+          ")
+            IFS=',' read -r TOTAL PASSED FAILED ERRORS SKIPPED <<< "$TESTS"
+          else
+            TOTAL=0; PASSED=0; FAILED=0; ERRORS=0; SKIPPED=0
+          fi
+
+          if [ "${{ job.status }}" = "success" ] || [ "$FAILED" = "0" -a "$ERRORS" = "0" ]; then
+            STATUS_ICON="✅"
+          else
+            STATUS_ICON="❌"
+          fi
+
+          DESCRIPTION="${STATUS_ICON} Tests: ${TOTAL} total | ${PASSED} passed | ${FAILED} failed | ${ERRORS} errors | Branch: ${{ github.ref_name }} | Commit: $(git rev-parse --short HEAD)"
+          echo "description=${DESCRIPTION}" >> $GITHUB_OUTPUT
+
+      - name: Step 6 - Send WeChat notification 🐣
+        if: always()
+        run: |
+          pip install requests==2.27.1
+          python wechat.py \
+            "${{ github.repository }}" \
+            "${{ job.status }}" \
+            "${{ secrets.AGENTID }}" \
+            "${{ secrets.CORPID }}" \
+            "${{ secrets.CORPSECRET }}" \
+            "${{ steps.summary.outputs.description }}"

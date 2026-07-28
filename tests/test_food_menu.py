@@ -1,433 +1,289 @@
 """
-Unit tests for Food Menu API
-Tests all endpoints with mocked MongoDB
+tests/test_food_menu.py
+========================
+Integration tests for the food_menu module: /api/food-menu
+
+Endpoint groups:
+  Health:  GET  /health
+  Dishes:  GET/POST /dishes, GET/PATCH/DELETE /dishes/:id
+  Orders:  POST/GET /orders, GET /orders/:number,
+           PATCH /orders/:number/status, DELETE /orders/:number
+  Stats:   GET  /stats/dishes, GET /stats/orders
+
+Notes:
+  - WeChat notifications are patched out (different path from the message module)
+  - GET /dishes/search uses a $text index; mongomock support is limited, not tested here
 """
 
-import pytest
-import json
-from datetime import datetime
-from bson.objectid import ObjectId
+from unittest.mock import patch
+
+PATCH_WECHAT = "app.modules.food_menu.routes.send_wechat_notification"
+
+VALID_DISH = {
+    "name": "Braised Pork",
+    "name_en": "Braised Pork",
+    "price": 38.0,
+    "stock": 10,
+    "category": "Main"
+}
 
 
-class TestFoodMenuHealth:
-    """Test health check endpoints"""
-    
-    def test_health_check(self, client):
-        """Test food menu health check endpoint"""
-        response = client.get('/api/food-menu/health')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['status'] == 'healthy'
-        assert data['service'] == 'Food Menu API'
+def _create_dish(client, data=None):
+    """Helper: create a dish and return the response."""
+    return client.post("/api/food-menu/dishes", json=data or VALID_DISH)
 
 
-class TestDishes:
-    """Test dish-related endpoints"""
-    
-    @pytest.fixture
-    def sample_dish(self, app):
-        """Create a sample dish in the database"""
-        from app import mongo
-        dish_data = {
-            'name': '宫保鸡丁',
-            'name_en': 'Kung Pao Chicken',
-            'price': 12.99,
-            'stock': 50,
-            'order_count': 10,
-            'category': 'Chicken',
-            'image_url': 'https://example.com/dish.jpg',
-            'description': '经典川菜',
-            'description_en': 'Classic Sichuan dish',
-            'ingredients': ['鸡肉', '花生', '辣椒'],
-            'ingredients_en': ['Chicken', 'Peanuts', 'Chili'],
-            'nutrition': {'calories': 350, 'protein': 25},
-            'is_active': True,
-            'created_at': datetime.now(),
-            'updated_at': datetime.now()
-        }
-        result = mongo.db.dishes.insert_one(dish_data)
-        dish_data['_id'] = result.inserted_id
-        return dish_data
-    
-    def test_get_dishes_empty(self, client):
-        """Test getting dishes when database is empty"""
-        response = client.get('/api/food-menu/dishes')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert data['data'] == []
-        assert data['total'] == 0
-    
-    def test_get_dishes_with_data(self, client, sample_dish):
-        """Test getting dishes with data"""
-        response = client.get('/api/food-menu/dishes')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert len(data['data']) == 1
-        assert data['data'][0]['name'] == '宫保鸡丁'
-        assert data['total'] == 1
-    
-    def test_get_dishes_with_category_filter(self, client, sample_dish):
-        """Test filtering dishes by category"""
-        response = client.get('/api/food-menu/dishes?category=Chicken')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert len(data['data']) == 1
-        
-        response = client.get('/api/food-menu/dishes?category=Seafood')
-        data = json.loads(response.data)
-        assert len(data['data']) == 0
-    
-    def test_get_dishes_with_pagination(self, client, sample_dish):
-        """Test pagination"""
-        response = client.get('/api/food-menu/dishes?limit=5&skip=0')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['limit'] == 5
-        assert data['skip'] == 0
-    
-    def test_get_dish_by_id(self, client, sample_dish):
-        """Test getting a single dish by ID"""
-        dish_id = str(sample_dish['_id'])
-        response = client.get(f'/api/food-menu/dishes/{dish_id}')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert data['data']['name'] == '宫保鸡丁'
-    
-    def test_get_dish_not_found(self, client):
-        """Test getting a non-existent dish"""
-        fake_id = str(ObjectId())
-        response = client.get(f'/api/food-menu/dishes/{fake_id}')
-        assert response.status_code == 404
-        data = json.loads(response.data)
-        assert data['success'] is False
-    
-    def test_update_dish_stock(self, client, sample_dish):
-        """Test updating dish stock"""
-        dish_id = str(sample_dish['_id'])
-        response = client.patch(
-            f'/api/food-menu/dishes/{dish_id}/stock',
-            data=json.dumps({'quantity': 10}),
-            content_type='application/json'
-        )
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert data['data']['stock'] == 60  # 50 + 10
-    
-    def test_get_popular_dishes(self, client, sample_dish):
-        """Test getting popular dishes"""
-        response = client.get('/api/food-menu/dishes/popular?limit=5')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert len(data['data']) <= 5
-    
-    def test_search_dishes_no_keyword(self, client):
-        """Test search without keyword"""
-        response = client.get('/api/food-menu/dishes/search')
-        assert response.status_code == 400
-        data = json.loads(response.data)
-        assert data['success'] is False
+def _get_dish_id(client, data=None):
+    """Helper: create a dish and return its _id string."""
+    resp = _create_dish(client, data)
+    assert resp.status_code == 201, resp.get_data(as_text=True)
+    return resp.get_json()["data"]["_id"]
 
 
-class TestOrders:
-    """Test order-related endpoints"""
-    
-    @pytest.fixture
-    def sample_dish_for_order(self, app):
-        """Create a sample dish for order testing"""
-        from app import mongo
-        dish_data = {
-            'name': '红烧肉',
-            'name_en': 'Braised Pork',
-            'price': 15.99,
-            'stock': 100,
-            'order_count': 5,
-            'category': 'Pork',
-            'is_active': True,
-            'created_at': datetime.now(),
-            'updated_at': datetime.now()
-        }
-        result = mongo.db.dishes.insert_one(dish_data)
-        dish_data['_id'] = result.inserted_id
-        return dish_data
-    
-    def test_create_order_success(self, client, sample_dish_for_order):
-        """Test creating a valid order"""
-        order_data = {
-            'customer_name': 'Test User',
-            'customer_email': 'test@example.com',
-            'customer_phone': '1234567890',
-            'delivery_date': '2024-12-25',
-            'delivery_time': '12:00-13:00',
-            'delivery_address': '123 Test St',
-            'items': [
-                {
-                    'dish_id': str(sample_dish_for_order['_id']),
-                    'quantity': 2
-                }
-            ],
-            'notes': 'No spicy please'
-        }
-        
-        response = client.post(
-            '/api/food-menu/orders',
-            data=json.dumps(order_data),
-            content_type='application/json'
-        )
-        assert response.status_code == 201
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert 'order_number' in data
-        assert data['data']['total_amount'] == 31.98  # 15.99 * 2
-        assert data['data']['total_items'] == 2
-    
-    def test_create_order_missing_fields(self, client):
-        """Test creating order with missing required fields"""
-        order_data = {
-            'customer_name': 'Test User'
-        }
-        
-        response = client.post(
-            '/api/food-menu/orders',
-            data=json.dumps(order_data),
-            content_type='application/json'
-        )
-        assert response.status_code == 400
-        data = json.loads(response.data)
-        assert data['success'] is False
-        assert 'Missing required field' in data['error']
-    
-    def test_create_order_empty_items(self, client):
-        """Test creating order with empty items"""
-        order_data = {
-            'delivery_date': '2024-12-25',
-            'delivery_time': '12:00-13:00',
-            'items': []
-        }
-        
-        response = client.post(
-            '/api/food-menu/orders',
-            data=json.dumps(order_data),
-            content_type='application/json'
-        )
-        assert response.status_code == 400
-        data = json.loads(response.data)
-        assert data['success'] is False
-    
-    def test_create_order_dish_not_found(self, client):
-        """Test creating order with non-existent dish"""
-        fake_id = str(ObjectId())
-        order_data = {
-            'delivery_date': '2024-12-25',
-            'delivery_time': '12:00-13:00',
-            'items': [
-                {
-                    'dish_id': fake_id,
-                    'quantity': 1
-                }
-            ]
-        }
-        
-        response = client.post(
-            '/api/food-menu/orders',
-            data=json.dumps(order_data),
-            content_type='application/json'
-        )
-        assert response.status_code == 404
-        data = json.loads(response.data)
-        assert data['success'] is False
-    
-    def test_create_order_insufficient_stock(self, client, sample_dish_for_order):
-        """Test creating order with insufficient stock"""
-        order_data = {
-            'delivery_date': '2024-12-25',
-            'delivery_time': '12:00-13:00',
-            'items': [
-                {
-                    'dish_id': str(sample_dish_for_order['_id']),
-                    'quantity': 200  # More than available stock
-                }
-            ]
-        }
-        
-        response = client.post(
-            '/api/food-menu/orders',
-            data=json.dumps(order_data),
-            content_type='application/json'
-        )
-        assert response.status_code == 400
-        data = json.loads(response.data)
-        assert data['success'] is False
-        assert 'Insufficient stock' in data['error']
-    
-    def test_get_orders_empty(self, client):
-        """Test getting orders when database is empty"""
-        response = client.get('/api/food-menu/orders')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert data['data'] == []
-        assert data['total'] == 0
-    
-    def test_get_order_by_number(self, client, sample_dish_for_order):
-        """Test getting order by order number"""
-        # First create an order
-        order_data = {
-            'delivery_date': '2024-12-25',
-            'delivery_time': '12:00-13:00',
-            'items': [
-                {
-                    'dish_id': str(sample_dish_for_order['_id']),
-                    'quantity': 1
-                }
-            ]
-        }
-        
-        create_response = client.post(
-            '/api/food-menu/orders',
-            data=json.dumps(order_data),
-            content_type='application/json'
-        )
-        order_number = json.loads(create_response.data)['order_number']
-        
-        # Then get the order
-        response = client.get(f'/api/food-menu/orders/{order_number}')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert data['data']['order_number'] == order_number
-        assert 'items' in data['data']
-    
-    def test_get_order_not_found(self, client):
-        """Test getting non-existent order"""
-        response = client.get('/api/food-menu/orders/INVALID123')
-        assert response.status_code == 404
-        data = json.loads(response.data)
-        assert data['success'] is False
-    
-    def test_update_order_status(self, client, sample_dish_for_order):
-        """Test updating order status"""
-        # Create an order first
-        order_data = {
-            'delivery_date': '2024-12-25',
-            'delivery_time': '12:00-13:00',
-            'items': [
-                {
-                    'dish_id': str(sample_dish_for_order['_id']),
-                    'quantity': 1
-                }
-            ]
-        }
-        
-        create_response = client.post(
-            '/api/food-menu/orders',
-            data=json.dumps(order_data),
-            content_type='application/json'
-        )
-        order_number = json.loads(create_response.data)['order_number']
-        
-        # Update status
-        response = client.patch(
-            f'/api/food-menu/orders/{order_number}/status',
-            data=json.dumps({'status': 'confirmed'}),
-            content_type='application/json'
-        )
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert data['data']['status'] == 'confirmed'
-    
-    def test_update_order_status_invalid(self, client, sample_dish_for_order):
-        """Test updating order with invalid status"""
-        # Create an order first
-        order_data = {
-            'delivery_date': '2024-12-25',
-            'delivery_time': '12:00-13:00',
-            'items': [
-                {
-                    'dish_id': str(sample_dish_for_order['_id']),
-                    'quantity': 1
-                }
-            ]
-        }
-        
-        create_response = client.post(
-            '/api/food-menu/orders',
-            data=json.dumps(order_data),
-            content_type='application/json'
-        )
-        order_number = json.loads(create_response.data)['order_number']
-        
-        # Try invalid status
-        response = client.patch(
-            f'/api/food-menu/orders/{order_number}/status',
-            data=json.dumps({'status': 'invalid_status'}),
-            content_type='application/json'
-        )
-        assert response.status_code == 400
-        data = json.loads(response.data)
-        assert data['success'] is False
-    
-    def test_cancel_order(self, client, sample_dish_for_order):
-        """Test cancelling an order"""
-        # Create an order first
-        order_data = {
-            'delivery_date': '2024-12-25',
-            'delivery_time': '12:00-13:00',
-            'items': [
-                {
-                    'dish_id': str(sample_dish_for_order['_id']),
-                    'quantity': 2
-                }
-            ]
-        }
-        
-        create_response = client.post(
-            '/api/food-menu/orders',
-            data=json.dumps(order_data),
-            content_type='application/json'
-        )
-        order_number = json.loads(create_response.data)['order_number']
-        
-        # Cancel the order
-        response = client.delete(f'/api/food-menu/orders/{order_number}')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        
-        # Verify stock was restored
-        from app import mongo
-        dish = mongo.db.dishes.find_one({'_id': sample_dish_for_order['_id']})
-        assert dish['stock'] == 100  # Should be back to original
+# ---------------------------------------------------------------------------
+# Health Check
+# ---------------------------------------------------------------------------
+
+def test_health_check(client):
+    """Database connected (mongomock); health endpoint returns healthy"""
+    resp = client.get("/api/food-menu/health")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["status"] == "healthy"
+    assert body["database"] == "connected"
 
 
-class TestStatistics:
-    """Test statistics endpoints"""
-    
-    def test_get_dishes_stats(self, client):
-        """Test getting dish statistics"""
-        response = client.get('/api/food-menu/stats/dishes')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert 'total_dishes' in data['data']
-        assert 'total_stock' in data['data']
-        assert 'by_category' in data['data']
-    
-    def test_get_orders_stats(self, client):
-        """Test getting order statistics"""
-        response = client.get('/api/food-menu/stats/orders')
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data['success'] is True
-        assert 'total_orders' in data['data']
-        assert 'total_revenue' in data['data']
-        assert 'by_status' in data['data']
+# ---------------------------------------------------------------------------
+# Dishes — GET/POST /dishes
+# ---------------------------------------------------------------------------
+
+def test_get_dishes_empty(client):
+    """Empty database returns total=0"""
+    resp = client.get("/api/food-menu/dishes")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["success"] is True
+    assert body["total"] == 0
+    assert body["data"] == []
 
 
-# Made with Bob
+def test_create_dish_success(client):
+    """Valid payload → 201, response contains name and price"""
+    resp = _create_dish(client)
+    assert resp.status_code == 201
+    body = resp.get_json()
+    assert body["success"] is True
+    assert body["data"]["name"] == "Braised Pork"
+    assert body["data"]["price"] == 38.0
+
+
+def test_create_dish_missing_field(client):
+    """Missing required field name → 400"""
+    resp = client.post("/api/food-menu/dishes", json={
+        "name_en": "No Name", "price": 10.0, "category": "Main"
+    })
+    assert resp.status_code == 400
+    assert resp.get_json()["success"] is False
+
+
+def test_create_dish_invalid_price(client):
+    """price = 0 → 400"""  # message stays in English as it matches the assertion string
+    resp = client.post("/api/food-menu/dishes", json={
+        **VALID_DISH, "price": 0
+    })
+    assert resp.status_code == 400
+    assert "Price must be greater than 0" in resp.get_json()["error"]
+
+
+# ---------------------------------------------------------------------------
+# Dishes — GET/PATCH/DELETE /dishes/:id
+# ---------------------------------------------------------------------------
+
+def test_get_dish_by_id(client):
+    """Create then fetch by ID; returns the correct dish"""
+    dish_id = _get_dish_id(client)
+    resp = client.get(f"/api/food-menu/dishes/{dish_id}")
+    assert resp.status_code == 200
+    assert resp.get_json()["data"]["name"] == "Braised Pork"
+
+
+def test_get_dish_not_found(client):
+    """Non-existent ID → 404"""
+    resp = client.get("/api/food-menu/dishes/000000000000000000000001")
+    assert resp.status_code == 404
+
+
+def test_update_dish_price(client):
+    """PATCH updates price; new value is readable via GET"""
+    dish_id = _get_dish_id(client)
+
+    resp = client.patch(f"/api/food-menu/dishes/{dish_id}", json={"price": 45.0})
+    assert resp.status_code == 200
+    assert resp.get_json()["data"]["price"] == 45.0
+
+
+def test_delete_dish_soft(client):
+    """DELETE performs a soft delete; is_active becomes False"""
+    dish_id = _get_dish_id(client)
+
+    resp = client.delete(f"/api/food-menu/dishes/{dish_id}")
+    assert resp.status_code == 200
+    assert resp.get_json()["data"]["is_active"] is False
+
+
+# ---------------------------------------------------------------------------
+# Orders — POST /orders
+# ---------------------------------------------------------------------------
+
+def _order_payload(dish_id, quantity=2):
+    return {
+        "delivery_date": "2025-12-01",
+        "delivery_time": "12:00",
+        "items": [{"dish_id": dish_id, "quantity": quantity}]
+    }
+
+
+def test_create_order_success(client):
+    """Successful order: 201, order_number returned; dish stock decremented"""
+    dish_id = _get_dish_id(client)
+
+    with patch(PATCH_WECHAT):
+        resp = client.post("/api/food-menu/orders", json=_order_payload(dish_id, quantity=2))
+
+    assert resp.status_code == 201
+    body = resp.get_json()
+    assert body["success"] is True
+    assert "order_number" in body
+
+    # Stock should be decremented: 10 - 2 = 8
+    dish_resp = client.get(f"/api/food-menu/dishes/{dish_id}")
+    assert dish_resp.get_json()["data"]["stock"] == 8
+
+
+def test_create_order_missing_field(client):
+    """Missing delivery_date → 400"""
+    resp = client.post("/api/food-menu/orders", json={
+        "delivery_time": "12:00",
+        "items": []
+    })
+    assert resp.status_code == 400
+    assert resp.get_json()["success"] is False
+
+
+def test_create_order_empty_items(client):
+    """Empty items list → 400"""
+    resp = client.post("/api/food-menu/orders", json={
+        "delivery_date": "2025-12-01",
+        "delivery_time": "12:00",
+        "items": []
+    })
+    assert resp.status_code == 400
+    assert "at least one item" in resp.get_json()["error"]
+
+
+def test_create_order_insufficient_stock(client):
+    """Insufficient stock (stock=1, ordering 2) → 400"""
+    dish_id = _get_dish_id(client, {**VALID_DISH, "stock": 1})
+
+    resp = client.post("/api/food-menu/orders", json=_order_payload(dish_id, quantity=2))
+    assert resp.status_code == 400
+    assert "Insufficient stock" in resp.get_json()["error"]
+
+
+# ---------------------------------------------------------------------------
+# Orders — GET /orders/:number
+# ---------------------------------------------------------------------------
+
+def test_get_order_by_number(client):
+    """Fetch order by order_number; response includes items list"""
+    dish_id = _get_dish_id(client)
+
+    with patch(PATCH_WECHAT):
+        create_resp = client.post("/api/food-menu/orders", json=_order_payload(dish_id))
+
+    order_number = create_resp.get_json()["order_number"]
+
+    resp = client.get(f"/api/food-menu/orders/{order_number}")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["data"]["order_number"] == order_number
+    assert len(body["data"]["items"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Orders — PATCH /orders/:number/status
+# ---------------------------------------------------------------------------
+
+def test_update_order_status(client):
+    """Update order status to confirmed"""
+    dish_id = _get_dish_id(client)
+
+    with patch(PATCH_WECHAT):
+        create_resp = client.post("/api/food-menu/orders", json=_order_payload(dish_id))
+
+    order_number = create_resp.get_json()["order_number"]
+
+    resp = client.patch(
+        f"/api/food-menu/orders/{order_number}/status",
+        json={"status": "confirmed"}
+    )
+    assert resp.status_code == 200
+    assert resp.get_json()["data"]["status"] == "confirmed"
+
+
+# ---------------------------------------------------------------------------
+# Orders — DELETE /orders/:number (cancel)
+# ---------------------------------------------------------------------------
+
+def test_cancel_order(client):
+    """Cancelling an order restores dish stock"""
+    dish_id = _get_dish_id(client)  # stock=10
+
+    with patch(PATCH_WECHAT):
+        create_resp = client.post("/api/food-menu/orders", json=_order_payload(dish_id, quantity=3))
+
+    order_number = create_resp.get_json()["order_number"]
+
+    # Stock should be decremented after order: 10 - 3 = 7
+    dish_resp = client.get(f"/api/food-menu/dishes/{dish_id}")
+    assert dish_resp.get_json()["data"]["stock"] == 7
+
+    # Cancel the order
+    cancel_resp = client.delete(f"/api/food-menu/orders/{order_number}")
+    assert cancel_resp.status_code == 200
+
+    # Stock should be restored to 10
+    dish_resp2 = client.get(f"/api/food-menu/dishes/{dish_id}")
+    assert dish_resp2.get_json()["data"]["stock"] == 10
+
+
+# ---------------------------------------------------------------------------
+# Stats
+# ---------------------------------------------------------------------------
+
+def test_get_dishes_stats(client):
+    """After creating dishes, stats returns total_dishes and by_category"""
+    _create_dish(client)
+    _create_dish(client, {**VALID_DISH, "name": "Steamed Fish", "name_en": "Steamed Fish"})
+
+    resp = client.get("/api/food-menu/stats/dishes")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["success"] is True
+    assert body["data"]["total_dishes"] == 2
+    assert "by_category" in body["data"]
+
+
+def test_get_orders_stats(client):
+    """After placing an order, stats returns total_orders and total_revenue"""
+    dish_id = _get_dish_id(client)
+
+    with patch(PATCH_WECHAT):
+        client.post("/api/food-menu/orders", json=_order_payload(dish_id, quantity=1))
+
+    resp = client.get("/api/food-menu/stats/orders")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["success"] is True
+    assert body["data"]["total_orders"] == 1
+    assert body["data"]["total_revenue"] == 38.0

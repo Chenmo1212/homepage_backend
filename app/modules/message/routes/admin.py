@@ -3,7 +3,7 @@ from app.modules.message.models.entry import Entry
 from app.modules.message.config.type_manager import type_manager
 from app.modules.message.validators.schema_validator import validator
 
-admin_bp = Blueprint('admin', __name__, url_prefix='/api/v1/message/admin')
+admin_bp = Blueprint('admin', __name__, url_prefix='/message/admin')
 
 
 @admin_bp.route('/entries', methods=['GET'])

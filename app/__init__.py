@@ -1,13 +1,19 @@
 from flask import Flask, render_template_string, request
 from flask_pymongo import PyMongo
 from app.auth import requires_auth
+from dotenv import load_dotenv
 import os
 import json
 
+# Load environment variables from .env file
+# This will load variables from .env file into os.environ
+# If .env file doesn't exist, it will silently continue
+load_dotenv()
 
 app = Flask(__name__)
 
-# Load configuration
+# Load configuration based on FLASK_ENV environment variable
+# FLASK_ENV can be set in .env file or as a system environment variable
 try:
     flask_env = os.getenv('FLASK_ENV', '').lower()
     if flask_env == 'production':
@@ -32,10 +38,8 @@ food_menu_mongo = PyMongo(app, uri=app.config.get('FOOD_MENU_MONGO_URI'))
 # Get base path from config for Swagger UI
 # This is used to construct correct URLs in the Swagger UI
 def get_base_path():
-    """Get the base path from config, removing trailing slash"""
-    base_path = app.config.get('APPLICATION_ROOT', '/')
-    if base_path == '/':
-        return ''
+    """Get the base path from config for Swagger UI URLs"""
+    base_path = app.config.get('SWAGGER_BASE_PATH', '')
     return base_path.rstrip('/')
 
 
@@ -64,11 +68,16 @@ def serve_swagger_json(filename):
         
         # Dynamically set the server URL based on the current request
         # This ensures Swagger UI always uses the correct base URL
-        base_url = request.url_root.rstrip('/')
+        # X-Forwarded-Proto is set by nginx to preserve the original scheme (http/https)
+        # request.url_root alone always returns http:// because nginx talks to Flask over HTTP internally
+        proto = request.headers.get('X-Forwarded-Proto', request.scheme)
+        base_url = f"{proto}://{request.host}"
+        base_path = get_base_path()
+        full_url = f"{base_url}{base_path}"
         
         swagger_data['servers'] = [
             {
-                "url": base_url,
+                "url": full_url,
                 "description": "Current server"
             }
         ]
@@ -151,21 +160,22 @@ def render_swagger_ui(title, swagger_file):
         body { margin:0; padding:0; }
         .back-link {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 16px;
+            left: 16px;
             z-index: 9999;
-            background: #667eea;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
+            background: #f8f7f4;
+            color: #111111;
+            border: 1px solid #d6cfc5;
+            padding: 6px 14px;
             text-decoration: none;
-            font-family: sans-serif;
-            font-weight: 500;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            transition: background 0.3s ease;
+            font-family: ui-monospace, "SF Mono", "Cascadia Code", monospace;
+            font-size: 0.78rem;
+            letter-spacing: 0.02em;
+            transition: border-color 0.15s, color 0.15s;
         }
         .back-link:hover {
-            background: #5568d3;
+            border-color: #c8401a;
+            color: #c8401a;
         }
     </style>
 </head>
@@ -176,21 +186,27 @@ def render_swagger_ui(title, swagger_file):
     <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
     <script>
         window.onload = function() {
+            // Get the current origin (protocol + domain + port)
+            const origin = window.location.origin;
+            // Construct the full URL with base path
+            const swaggerUrl = origin + "{{ base_path }}/static/{{ swagger_file }}";
+            
             const ui = SwaggerUIBundle({
-                url: "{{ base_path }}/static/{{ swagger_file }}",
+                url: swaggerUrl,
                 dom_id: '#swagger-ui',
                 deepLinking: true,
                 presets: [
                     SwaggerUIBundle.presets.apis,
                     SwaggerUIStandalonePreset
                 ],
-                plugins: [
-                    SwaggerUIBundle.plugins.DownloadUrl
-                ],
+                // Remove DownloadUrl plugin to prevent validation errors with subdirectory deployment
+                plugins: [],
                 layout: "StandaloneLayout",
                 docExpansion: "list",
                 defaultModelsExpandDepth: 3,
-                displayRequestDuration: true
+                displayRequestDuration: true,
+                // Disable validator to prevent it from trying to fetch the spec from the wrong URL
+                validatorUrl: null
             });
             window.ui = ui;
         };
@@ -214,127 +230,175 @@ def api_docs_index():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Documentation</title>
     <style>
-        * {
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+            background: #f8f7f4;
+            color: #111111;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            padding: 0;
         }
-        
-        .container {
-            max-width: 800px;
-            width: 100%;
+
+        .page-shell {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 64px 24px 80px;
         }
-        
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 40px;
+
+        /* ── Header ── */
+        .header-eyebrow {
+            font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
+            font-size: 0.75rem;
+            font-weight: 400;
+            letter-spacing: 0.08em;
+            color: #c8401a;
+            text-transform: uppercase;
+            margin-bottom: 16px;
         }
-        
+
         .header h1 {
-            font-size: 2.5rem;
+            font-size: 2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            color: #111111;
             margin-bottom: 10px;
-            font-weight: 700;
         }
-        
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+
+        .header-sub {
+            font-size: 0.95rem;
+            color: #5a5550;
+            line-height: 1.6;
+            margin-bottom: 48px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid #e8e3dc;
         }
-        
+
+        /* ── API list ── */
         .api-list {
-            display: grid;
-            gap: 20px;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            display: flex;
+            flex-direction: column;
+            gap: 0;
         }
-        
+
         .api-card {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            padding: 24px 0;
+            border-bottom: 1px solid #e8e3dc;
             text-decoration: none;
             color: inherit;
-            display: block;
         }
-        
-        .api-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+
+        .api-card:first-child {
+            border-top: 1px solid #e8e3dc;
         }
-        
-        .api-card h2 {
-            color: #667eea;
-            font-size: 1.5rem;
-            margin-bottom: 10px;
+
+        .card-index {
+            font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
+            font-size: 0.72rem;
+            color: #b0a89e;
+            min-width: 28px;
+            padding-top: 3px;
+            flex-shrink: 0;
+        }
+
+        .card-body {
+            flex: 1;
+        }
+
+        .card-title {
+            font-size: 1rem;
             font-weight: 600;
+            color: #111111;
+            margin-bottom: 4px;
+            line-height: 1.4;
+            transition: color 0.15s;
         }
-        
-        .api-card p {
-            color: #666;
+
+        .api-card:hover .card-title {
+            color: #c8401a;
+        }
+
+        .card-desc {
+            font-size: 0.875rem;
+            color: #5a5550;
             line-height: 1.6;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
-        
-        .api-card .badge {
+
+        .card-tag {
+            font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
+            font-size: 0.7rem;
+            color: #7a7068;
+            letter-spacing: 0.04em;
+            border: 1px solid #d6cfc5;
+            padding: 2px 7px;
             display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
         }
-        
+
+        .card-arrow {
+            font-size: 1rem;
+            color: #c8c0b6;
+            padding-top: 2px;
+            flex-shrink: 0;
+            transition: color 0.15s, transform 0.15s;
+        }
+
+        .api-card:hover .card-arrow {
+            color: #c8401a;
+            transform: translateX(3px);
+        }
+
+        /* ── Footer ── */
         .footer {
-            text-align: center;
-            color: white;
-            margin-top: 40px;
-            opacity: 0.8;
-            font-size: 0.9rem;
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #e8e3dc;
+            font-size: 0.8rem;
+            color: #a09890;
         }
-        
-        @media (max-width: 600px) {
-            .header h1 {
-                font-size: 2rem;
+
+        @media (max-width: 480px) {
+            .page-shell {
+                padding: 40px 20px 60px;
             }
-            
-            .api-list {
-                grid-template-columns: 1fr;
+            .header h1 {
+                font-size: 1.6rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="page-shell">
         <div class="header">
-            <h1>🚀 API Documentation</h1>
-            <p>Select an API to view its documentation</p>
+            <p class="header-eyebrow">GET /docs</p>
+            <h1>API Documentation</h1>
+            <p class="header-sub">Select a specification to open its interactive reference.</p>
         </div>
-        
+
         <div class="api-list">
             {% for api in apis %}
             <a href="{{ base_path }}/docs/{{ api.route }}" class="api-card">
-                <h2>{{ api.icon }} {{ api.title }}</h2>
-                <p>{{ api.description }}</p>
-                <span class="badge">OpenAPI 3.0</span>
+                <span class="card-index">0{{ loop.index }}</span>
+                <div class="card-body">
+                    <div class="card-title">{{ api.title }}</div>
+                    <p class="card-desc">{{ api.description }}</p>
+                    <span class="card-tag">OpenAPI 3.0</span>
+                </div>
+                <span class="card-arrow">→</span>
             </a>
             {% endfor %}
         </div>
-        
+
         <div class="footer">
-            <p>Powered by Swagger UI</p>
+            Swagger UI &mdash; OpenAPI 3.0
         </div>
     </div>
 </body>

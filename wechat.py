@@ -3,7 +3,7 @@ import sys
 import json
 
 
-def post_wx():
+def post_wx(description=None):
     try:
         get_token_url = f"https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid={CORPID}&corpsecret={CORPSECRET}"
         response = requests.get(get_token_url).content
@@ -11,13 +11,16 @@ def post_wx():
 
         if access_token and len(access_token) > 0:
             send_msg_url = f'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}'
+            card_description = description if description else (
+                "🎉 Github Workflow Notification. 🍏 This job's status is " + status
+            )
             data = {
                 "touser": '@all',
                 "agentid": AGENTID,
                 "msgtype": "textcard",
                 "textcard": {
                     "title": repository.split('/')[1] + " updated! 🚀",
-                    "description": "🎉 Github Workflow Notification. 🍏 This job's status is " + status,
+                    "description": card_description,
                     "url": "https://github.com/" + repository,
                     "btntxt": "More"
                 },
@@ -39,6 +42,7 @@ if __name__ == '__main__':
         AGENTID = sys.argv[3]  # application id
         CORPID = sys.argv[4]  # enterprise id
         CORPSECRET = sys.argv[5]  # application secret
-        post_wx()
+        description = sys.argv[6] if len(sys.argv) > 6 else None
+        post_wx(description)
     except IndexError:
         print('Please specify five params: repository, job_status, AGENTID, CORPID, CORPSECRET')

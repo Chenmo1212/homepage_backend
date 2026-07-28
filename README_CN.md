@@ -133,7 +133,7 @@ curl -X POST http://localhost:5001/messages \
   }'
 
 # 或使用新的统一端点
-curl -X POST http://localhost:5001/api/v1/message/entries \
+curl -X POST http://localhost:5001/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "message",
@@ -162,7 +162,7 @@ curl -X POST http://localhost:5001/api/v1/message/entries \
 
 **示例：**
 ```bash
-curl -X POST http://localhost:5001/api/v1/message/entries \
+curl -X POST http://localhost:5001/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "feedback",
@@ -191,7 +191,7 @@ curl -X POST http://localhost:5001/api/v1/message/entries \
 
 **示例：**
 ```bash
-curl -X POST http://localhost:5001/api/v1/message/entries \
+curl -X POST http://localhost:5001/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "notification",
@@ -215,7 +215,7 @@ curl -X POST http://localhost:5001/api/v1/message/entries \
 
 **获取可见entries**
 ```bash
-GET /api/v1/message/entries
+GET /message/entries
 参数：
   - type: 类型过滤 (message/feedback/notification)
   - source: 来源过滤
@@ -224,12 +224,12 @@ GET /api/v1/message/entries
   - limit: 每页数量 (默认: 20)
 
 示例：
-curl "http://localhost:5001/api/v1/message/entries?type=feedback&source=homepage"
+curl "http://localhost:5001/message/entries?type=feedback&source=homepage"
 ```
 
 **创建entry**
 ```bash
-POST /api/v1/message/entries
+POST /message/entries
 Body: {
   "type": "message",
   "source": "homepage",
@@ -239,14 +239,14 @@ Body: {
 
 **获取单个entry**
 ```bash
-GET /api/v1/message/entries/{id}
+GET /message/entries/{id}
 ```
 
 #### 管理端点
 
 **获取所有entries（包括隐藏的）**
 ```bash
-GET /api/v1/message/admin/entries
+GET /message/admin/entries
 参数：
   - type: 类型过滤
   - source: 来源过滤
@@ -258,7 +258,7 @@ GET /api/v1/message/admin/entries
 
 **更新entry状态**
 ```bash
-PUT /api/v1/message/admin/entries/{id}/status
+PUT /message/admin/entries/{id}/status
 Body: {
   "is_show": true,
   "is_delete": false,
@@ -268,7 +268,7 @@ Body: {
 
 **获取统计信息**
 ```bash
-GET /api/v1/message/admin/entries/stats
+GET /message/admin/entries/stats
 返回：
 {
   "total": 100,
@@ -285,13 +285,13 @@ GET /api/v1/message/admin/entries/stats
 **类型管理**
 ```bash
 # 获取所有类型
-GET /api/v1/message/admin/types
+GET /message/admin/types
 
 # 获取特定类型的schema
-GET /api/v1/message/admin/types/{type}/schema
+GET /message/admin/types/{type}/schema
 
 # 创建新类型
-POST /api/v1/message/admin/types
+POST /message/admin/types
 ```
 
 ### 向后兼容API
@@ -418,7 +418,7 @@ curl http://localhost:5001/admin/messages
 ### 使用新类型
 
 ```bash
-curl -X POST http://localhost:5001/api/v1/message/entries \
+curl -X POST http://localhost:5001/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "custom_type",
@@ -481,13 +481,13 @@ chmod +x test_api_complete.sh
 A: 已在 `app/__init__.py` 中配置 `JSON_AS_ASCII = False`，重启Flask即可。
 
 ### Q: 如何查看所有数据（包括隐藏的）？
-A: 使用管理员端点：`GET /api/v1/admin/entries`
+A: 使用管理员端点：`GET /message/admin/entries`
 
 ### Q: 如何按类型过滤？
-A: 添加 `type` 参数：`GET /api/v1/entries?type=feedback`
+A: 添加 `type` 参数：`GET /message/entries?type=feedback`
 
 ### Q: 如何支持多个项目？
-A: 使用 `source` 字段区分：`GET /api/v1/entries?source=project_a`
+A: 使用 `source` 字段区分：`GET /message/entries?source=project_a`
 
 ### Q: 数据迁移失败怎么办？
 A: 检查 `backups/` 目录中的JSON备份文件，可以手动恢复。

@@ -10,12 +10,12 @@
   },
   "servers": [
     {
-      "url": "http://localhost:5000",
-      "description": "Development server"
+      "url": "https://api.chenmo1212.cn",
+      "description": "Production server"
     },
     {
-      "url": "https://api.chenmo1212.cn/message",
-      "description": "Production server"
+      "url": "http://localhost:5000",
+      "description": "Development server"
     }
   ],
   "tags": [
@@ -29,7 +29,7 @@
     }
   ],
   "paths": {
-    "/api/v1/message/entries": {
+    "/message/entries": {
       "get": {
         "tags": ["Entries"],
         "summary": "Get entries list",
@@ -172,7 +172,7 @@
         }
       }
     },
-    "/api/v1/message/entries/{entry_id}": {
+    "/message/entries/{entry_id}": {
       "get": {
         "tags": ["Entries"],
         "summary": "Get single entry",
@@ -318,7 +318,7 @@
         }
       }
     },
-    "/api/v1/message/entries/batch-delete": {
+    "/message/entries/batch-delete": {
       "post": {
         "tags": ["Entries"],
         "summary": "Batch delete entries",
@@ -373,7 +373,7 @@
         }
       }
     },
-    "/api/v1/message/admin/entries": {
+    "/message/admin/entries": {
       "get": {
         "tags": ["Admin"],
         "summary": "Admin get all entries",
@@ -446,7 +446,7 @@
         }
       }
     },
-    "/api/v1/message/admin/entries/{entry_id}/status": {
+    "/message/admin/entries/{entry_id}/status": {
       "put": {
         "tags": ["Admin"],
         "summary": "Update entry status",
@@ -513,7 +513,7 @@
         }
       }
     },
-    "/api/v1/message/admin/entries/stats": {
+    "/message/admin/entries/stats": {
       "get": {
         "tags": ["Admin"],
         "summary": "Get statistics",
@@ -563,7 +563,7 @@
         }
       }
     },
-    "/api/v1/message/admin/types": {
+    "/message/admin/types": {
       "get": {
         "tags": ["Admin"],
         "summary": "Get all supported types",
@@ -651,7 +651,7 @@
         }
       }
     },
-    "/api/v1/message/admin/types/{type_name}/schema": {
+    "/message/admin/types/{type_name}/schema": {
       "get": {
         "tags": ["Admin"],
         "summary": "Get type schema",
@@ -697,7 +697,7 @@
         }
       }
     },
-    "/api/v1/message/admin/types/{type_name}": {
+    "/message/admin/types/{type_name}": {
       "put": {
         "tags": ["Admin"],
         "summary": "Update type configuration",
