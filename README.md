@@ -147,7 +147,7 @@ curl -X POST http://localhost:5001/messages \
   }'
 
 # Or using the new unified endpoint
-curl -X POST http://localhost:5001/api/v1/message/entries \
+curl -X POST http://localhost:5001/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "message",
@@ -176,7 +176,7 @@ For project feedback, bug reports, feature requests, etc.
 
 **Example:**
 ```bash
-curl -X POST http://localhost:5001/api/v1/message/entries \
+curl -X POST http://localhost:5001/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "feedback",
@@ -205,7 +205,7 @@ For system notifications, announcements, etc.
 
 **Example:**
 ```bash
-curl -X POST http://localhost:5001/api/v1/message/entries \
+curl -X POST http://localhost:5001/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "notification",
@@ -229,7 +229,7 @@ curl -X POST http://localhost:5001/api/v1/message/entries \
 
 **Get visible entries**
 ```bash
-GET /api/v1/message/entries
+GET /message/entries
 Parameters:
   - type: Type filter (message/feedback/notification)
   - source: Source filter
@@ -238,12 +238,12 @@ Parameters:
   - limit: Items per page (default: 20)
 
 Example:
-curl "http://localhost:5001/api/v1/message/entries?type=feedback&source=homepage"
+curl "http://localhost:5001/message/entries?type=feedback&source=homepage"
 ```
 
 **Create entry**
 ```bash
-POST /api/v1/message/entries
+POST /message/entries
 Body: {
   "type": "message",
   "source": "homepage",
@@ -253,14 +253,14 @@ Body: {
 
 **Get single entry**
 ```bash
-GET /api/v1/message/entries/{id}
+GET /message/entries/{id}
 ```
 
 #### Admin Endpoints
 
 **Get all entries (including hidden)**
 ```bash
-GET /api/v1/message/admin/entries
+GET /message/admin/entries
 Parameters:
   - type: Type filter
   - source: Source filter
@@ -272,7 +272,7 @@ Parameters:
 
 **Update entry status**
 ```bash
-PUT /api/v1/message/admin/entries/{id}/status
+PUT /message/admin/entries/{id}/status
 Body: {
   "is_show": true,
   "is_delete": false,
@@ -282,7 +282,7 @@ Body: {
 
 **Get statistics**
 ```bash
-GET /api/v1/message/admin/entries/stats
+GET /message/admin/entries/stats
 Returns:
 {
   "total": 100,
@@ -299,13 +299,13 @@ Returns:
 **Type management**
 ```bash
 # Get all types
-GET /api/v1/message/admin/types
+GET /message/admin/types
 
 # Get specific type schema
-GET /api/v1/message/admin/types/{type}/schema
+GET /message/admin/types/{type}/schema
 
 # Create new type
-POST /api/v1/message/admin/types
+POST /message/admin/types
 ```
 
 ### Backward Compatible API
@@ -432,7 +432,7 @@ Edit `app/modules/homepage/config/entry_types.json`:
 ### Using New Types
 
 ```bash
-curl -X POST http://localhost:5001/api/v1/message/entries \
+curl -X POST http://localhost:5001/message/entries \
   -H "Content-Type: application/json" \
   -d '{
     "type": "custom_type",
@@ -495,13 +495,13 @@ chmod +x test_api_complete.sh
 A: Already configured `JSON_AS_ASCII = False` in `app/__init__.py`, restart Flask to apply.
 
 ### Q: How to view all data (including hidden)?
-A: Use admin endpoint: `GET /api/v1/admin/entries`
+A: Use admin endpoint: `GET /message/admin/entries`
 
 ### Q: How to filter by type?
-A: Add `type` parameter: `GET /api/v1/entries?type=feedback`
+A: Add `type` parameter: `GET /message/entries?type=feedback`
 
 ### Q: How to support multiple projects?
-A: Use `source` field to distinguish: `GET /api/v1/entries?source=project_a`
+A: Use `source` field to distinguish: `GET /message/entries?source=project_a`
 
 ### Q: What if migration fails?
 A: Check JSON backup files in `backups/` directory, can be manually restored.

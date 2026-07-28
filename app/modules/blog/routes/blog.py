@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, jsonify, request, current_app
 
-blog_bp = Blueprint('blog', __name__, url_prefix='/api/v1/blog')
+blog_bp = Blueprint('blog', __name__, url_prefix='/blog')
 
 
 @blog_bp.route('/verify', methods=['POST'])

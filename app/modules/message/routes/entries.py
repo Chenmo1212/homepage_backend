@@ -4,7 +4,7 @@ from app.modules.message.validators.schema_validator import validator
 from app.modules.message.config.type_manager import type_manager
 from app.modules.message.notifications.notification_service import send_notification
 
-entries_bp = Blueprint('entries', __name__, url_prefix='/api/v1/message/entries')
+entries_bp = Blueprint('entries', __name__, url_prefix='/message/entries')
 
 
 @entries_bp.route('', methods=['GET'])

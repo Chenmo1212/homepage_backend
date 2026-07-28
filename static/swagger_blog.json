@@ -25,7 +25,7 @@
     }
   ],
   "paths": {
-    "/api/v1/blog/verify": {
+    "/blog/verify": {
       "post": {
         "tags": ["Blog"],
         "summary": "Verify blog post password",
