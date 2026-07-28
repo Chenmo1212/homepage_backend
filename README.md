@@ -468,14 +468,27 @@ You can add custom templates as needed.
 
 ## 🧪 Testing
 
+The project includes an integration test suite covering all three modules. Tests use **mongomock** to replace the real MongoDB — no database server needed.
+
 ```bash
 # Run all tests
-pytest test_api.py -v
+venv/bin/pytest tests/ -v
 
-# Run complete API tests
-chmod +x test_api_complete.sh
-./test_api_complete.sh
+# Run a single module
+venv/bin/pytest tests/test_blog.py -v
+
+# Suppress deprecation warnings from older dependencies
+venv/bin/pytest tests/ -v -p no:warnings
 ```
+
+| File | Module | Cases |
+|---|---|---|
+| `tests/test_blog.py` | blog | 5 |
+| `tests/test_message_entries.py` | message — public CRUD | 15 |
+| `tests/test_message_admin.py` | message — admin | 9 |
+| `tests/test_food_menu.py` | food_menu | 18 |
+
+See **[tests/README.md](tests/README.md)** for full documentation on how the mock setup works, which external services are patched, and known limitations.
 
 ---
 
