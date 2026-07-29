@@ -1,0 +1,372 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "DDT OTA API",
+    "description": "Over-the-air update endpoints for the DDT mobile app (@capgo/capacitor-updater integration)",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.chenmo1212.cn",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:5000",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "OTA",
+      "description": "Over-the-air update check and lifecycle event reporting"
+    }
+  ],
+  "paths": {
+    "/ddt/ota": {
+      "post": {
+        "tags": ["OTA"],
+        "summary": "Check for an OTA update",
+        "description": "Called by @capgo/capacitor-updater on app start. Returns the latest bundle if the client is outdated, or an empty object if already up to date.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppInfo"
+              },
+              "example": {
+                "version_name": "1.7.1",
+                "version_build": "42",
+                "platform": "ios",
+                "device_id": "550e8400-e29b-41d4-a716-446655440000",
+                "app_id": "com.example.ddt",
+                "plugin_version": "7.50.2"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Update available — returns bundle metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/BundlePayload" },
+                    { "$ref": "#/components/schemas/UpToDate" }
+                  ]
+                },
+                "examples": {
+                  "update_available": {
+                    "summary": "Update available",
+                    "value": {
+                      "version": "1.8.0",
+                      "url": "https://cdn.example.com/app-1.8.0.zip",
+                      "checksum": "sha256-abc123"
+                    }
+                  },
+                  "up_to_date": {
+                    "summary": "Already on latest version",
+                    "value": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or missing request body",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "invalid request" }
+              }
+            }
+          },
+          "502": {
+            "description": "CDN unreachable — could not fetch version info",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": { "error": "could not fetch version info" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ddt/ota/version": {
+      "post": {
+        "tags": ["OTA"],
+        "summary": "Check for an OTA update (alias)",
+        "description": "Alias for `POST /ddt/ota`. Identical behaviour.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Update available or already up to date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/BundlePayload" },
+                    { "$ref": "#/components/schemas/UpToDate" }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or missing request body",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "502": {
+            "description": "CDN unreachable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ddt/ota/event": {
+      "post": {
+        "tags": ["OTA"],
+        "summary": "Report an OTA lifecycle event",
+        "description": "Records a client-side OTA lifecycle event (download, install, failure) for upgrade funnel analytics. `error_message` should only be included with `download_failed` or `update_failed` events.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtaEventRequest"
+              },
+              "examples": {
+                "install_success": {
+                  "summary": "Successful install",
+                  "value": {
+                    "event": "install_success",
+                    "device_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "occurred_at": "2025-06-01T10:00:00Z",
+                    "from_version": "1.7.1",
+                    "to_version": "1.8.0"
+                  }
+                },
+                "download_failed": {
+                  "summary": "Download failure with error",
+                  "value": {
+                    "event": "download_failed",
+                    "device_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "occurred_at": "2025-06-01T09:55:00Z",
+                    "from_version": "1.7.1",
+                    "to_version": "1.8.0",
+                    "error_message": "network timeout after 30s"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Event recorded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean", "example": true }
+                  }
+                },
+                "example": { "ok": true }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error — missing or invalid field",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok":    { "type": "boolean", "example": false },
+                    "error": { "type": "string",  "example": "invalid event type" }
+                  }
+                },
+                "examples": {
+                  "invalid_event": {
+                    "summary": "Unknown event type",
+                    "value": { "ok": false, "error": "invalid event type" }
+                  },
+                  "missing_device_id": {
+                    "summary": "device_id not provided",
+                    "value": { "ok": false, "error": "device_id required" }
+                  },
+                  "missing_occurred_at": {
+                    "summary": "occurred_at not provided",
+                    "value": { "ok": false, "error": "occurred_at required" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database write failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok":    { "type": "boolean", "example": false },
+                    "error": { "type": "string",  "example": "failed to record event" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AppInfo": {
+        "type": "object",
+        "description": "App metadata sent by @capgo/capacitor-updater on each update check",
+        "required": ["version_name"],
+        "properties": {
+          "version_name": {
+            "type": "string",
+            "description": "Current JS bundle version string",
+            "example": "1.7.1"
+          },
+          "version_build": {
+            "type": "string",
+            "description": "Native build number",
+            "example": "42"
+          },
+          "platform": {
+            "type": "string",
+            "enum": ["ios", "android"],
+            "description": "Mobile platform",
+            "example": "ios"
+          },
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique device identifier",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "app_id": {
+            "type": "string",
+            "description": "Bundle identifier of the app",
+            "example": "com.example.ddt"
+          },
+          "plugin_version": {
+            "type": "string",
+            "description": "Version of @capgo/capacitor-updater in use",
+            "example": "7.50.2"
+          }
+        }
+      },
+      "BundlePayload": {
+        "type": "object",
+        "description": "Latest OTA bundle — returned when an update is available",
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "New bundle version string",
+            "example": "1.8.0"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "HTTPS URL to download the new bundle zip",
+            "example": "https://cdn.example.com/app-1.8.0.zip"
+          },
+          "checksum": {
+            "type": "string",
+            "description": "Integrity checksum for the bundle zip",
+            "example": "sha256-abc123"
+          }
+        }
+      },
+      "UpToDate": {
+        "type": "object",
+        "description": "Empty object returned when the client is already on the latest version",
+        "example": {}
+      },
+      "OtaEventRequest": {
+        "type": "object",
+        "description": "OTA lifecycle event payload",
+        "required": ["event", "device_id", "occurred_at"],
+        "properties": {
+          "event": {
+            "type": "string",
+            "enum": [
+              "download_start",
+              "download_complete",
+              "install_success",
+              "update_failed",
+              "download_failed"
+            ],
+            "description": "OTA lifecycle event type",
+            "example": "install_success"
+          },
+          "device_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique device identifier",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the event occurred on the client",
+            "example": "2025-06-01T10:00:00Z"
+          },
+          "from_version": {
+            "type": "string",
+            "description": "Bundle version the device is updating from. Use 'builtin' for the factory bundle.",
+            "example": "1.7.1"
+          },
+          "to_version": {
+            "type": "string",
+            "description": "Bundle version the device is updating to",
+            "example": "1.8.0"
+          },
+          "error_message": {
+            "type": "string",
+            "description": "Human-readable error detail. Only relevant for download_failed and update_failed events.",
+            "example": "network timeout after 30s"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "invalid request"
+          }
+        }
+      }
+    }
+  }
+}

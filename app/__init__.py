@@ -48,7 +48,8 @@ def get_base_path():
 SWAGGER_FILES = [
     'swagger.json',
     'swagger_food_menu.json',
-    'swagger_blog.json'
+    'swagger_blog.json',
+    'swagger_ddt_ota.json',
 ]
 
 
@@ -132,6 +133,13 @@ API_DOCS = [
         'icon': '📰',
         'description': 'A simple API for blog operations',
         'swagger_file': 'swagger_blog.json'
+    },
+    {
+        'route': 'ddt-ota',
+        'title': 'DDT OTA API',
+        'icon': '📦',
+        'description': 'Over-the-air update check and lifecycle event reporting for the DDT mobile app',
+        'swagger_file': 'swagger_ddt_ota.json'
     }
 ]
 
