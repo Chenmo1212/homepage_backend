@@ -585,6 +585,56 @@ def get_order(order_number):
         }), 500
 
 
+@food_menu_bp.route('/orders/<order_number>', methods=['PUT'])
+def update_order(order_number):
+    """Update order details (customer info, delivery info, notes)."""
+    try:
+        _, order_model, _ = get_models()
+        data = request.get_json()
+
+        order = order_model.find_by_order_number(order_number)
+        if not order:
+            return jsonify({
+                'success': False,
+                'error': 'Order not found'
+            }), 404
+
+        allowed_fields = [
+            'customer_name', 'customer_email', 'customer_phone',
+            'delivery_date', 'delivery_time', 'delivery_address',
+            'payment_method', 'notes', 'status'
+        ]
+        update_data = {k: v for k, v in data.items() if k in allowed_fields}
+
+        if not update_data:
+            return jsonify({
+                'success': False,
+                'error': 'No valid fields to update'
+            }), 400
+
+        if 'status' in update_data:
+            valid_statuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'completed', 'cancelled']
+            if update_data['status'] not in valid_statuses:
+                return jsonify({
+                    'success': False,
+                    'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
+                }), 400
+
+        updated_order = order_model.update_order(order_number, update_data)
+
+        return jsonify({
+            'success': True,
+            'data': serialize_doc(updated_order),
+            'message': 'Order updated successfully'
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @food_menu_bp.route('/orders/<order_number>/status', methods=['PATCH'])
 def update_order_status(order_number):
     """Update order status."""
