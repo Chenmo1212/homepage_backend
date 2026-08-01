@@ -4,6 +4,12 @@ from app.auth import requires_auth
 from dotenv import load_dotenv
 import os
 import json
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s'
+)
 
 # Load environment variables from .env file
 # This will load variables from .env file into os.environ

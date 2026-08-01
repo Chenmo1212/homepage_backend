@@ -11,6 +11,10 @@ from datetime import datetime
 import requests
 import json
 import os
+import logging
+import traceback
+
+logger = logging.getLogger(__name__)
 
 # Create blueprint with url_prefix
 food_menu_bp = Blueprint('food_menu', __name__, url_prefix='/food-menu')
@@ -768,6 +772,7 @@ def update_order_items(order_number):
         }), 200
 
     except Exception as e:
+        logger.error('update_order_items failed: %s', traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
