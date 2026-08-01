@@ -1,7 +1,11 @@
+import logging
+
 from flask import Blueprint, jsonify, request
 from app.modules.message.models.entry import Entry
 from app.modules.message.config.type_manager import type_manager
 from app.modules.message.validators.schema_validator import validator
+
+logger = logging.getLogger(__name__)
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/message/admin')
 
@@ -52,8 +56,9 @@ def get_all_entries():
             'status': 200
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to get all entries')
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @admin_bp.route('/entries/<string:entry_id>/status', methods=['PUT'])
@@ -82,8 +87,9 @@ def update_entry_status(entry_id):
                 'status': 404
             }), 404
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to update entry status: %s', entry_id)
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @admin_bp.route('/entries/stats', methods=['GET'])
@@ -107,8 +113,9 @@ def get_stats():
             'status': 200
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to get entry stats')
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @admin_bp.route('/types', methods=['GET'])
@@ -133,8 +140,9 @@ def get_types():
             'status': 200
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to get types')
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @admin_bp.route('/types/<string:type_name>/schema', methods=['GET'])
@@ -154,8 +162,9 @@ def get_type_schema(type_name):
             'status': 200
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to get type schema: %s', type_name)
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @admin_bp.route('/types', methods=['POST'])
@@ -195,8 +204,9 @@ def create_type():
                 'status': 400
             }), 400
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to create type')
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @admin_bp.route('/types/<string:type_name>', methods=['PUT'])
@@ -235,7 +245,8 @@ def update_type(type_name):
                 'status': 404
             }), 404
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to update type: %s', type_name)
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 # Made with Bob

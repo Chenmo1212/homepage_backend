@@ -1,5 +1,8 @@
+import logging
 import os
 from flask import Blueprint, jsonify, request, current_app
+
+logger = logging.getLogger(__name__)
 
 blog_bp = Blueprint('blog', __name__, url_prefix='/blog')
 
@@ -70,8 +73,8 @@ def verify_blog_password():
             'success': True
         }), 200
         
-    except Exception as e:
-        print(f"Error processing request: {str(e)}")
+    except Exception:
+        logger.exception('Error processing blog password verification request')
         return jsonify({
             'success': False,
             'error': 'Invalid request'

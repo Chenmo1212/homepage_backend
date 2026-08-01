@@ -12,7 +12,6 @@ import requests
 import json
 import os
 import logging
-import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +71,7 @@ def send_wechat_notification(markdown_content, delivery_info='', order_number=''
         CORPSECRET = os.getenv('CORPSECRET')
         
         if not all([CORPID, AGENTID, CORPSECRET]):
-            print('⚠️ WeChat Work credentials not configured')
+            logger.warning('WeChat Work credentials not configured')
             return {'error': 'WeChat Work credentials not configured', 'status': 500}
         
         # Step 1: Get access token
@@ -83,8 +82,8 @@ def send_wechat_notification(markdown_content, delivery_info='', order_number=''
         
         if not access_token:
             error_msg = token_data.get('errmsg', 'Unknown error')
-            print(f'❌ Failed to get access token: {error_msg}')
-            return {'error': f'Failed to get access token: {error_msg}', 'status': 500}
+            logger.error('Failed to get WeChat Work access token: %s', error_msg)
+            return {'error': 'Failed to get access token', 'status': 500}
 
         # Step 2: Send message
         send_msg_url = f'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token={access_token}'
@@ -116,16 +115,16 @@ def send_wechat_notification(markdown_content, delivery_info='', order_number=''
         msg_result = msg_response.json()
         
         if msg_result.get('errcode') == 0:
-            print(f'✅ WeChat Work notification sent successfully')
+            logger.info('WeChat Work notification sent successfully')
             return {'msg': 'WeChat notification sent successfully', 'status': 200}
-        else:
-            error_msg = msg_result.get('errmsg', 'Unknown error')
-            print(f'⚠️ WeChat Work notification failed: {error_msg}')
-            return {'error': f'Failed to send notification: {error_msg}', 'status': msg_response.status_code}
+
+        error_msg = msg_result.get('errmsg', 'Unknown error')
+        logger.warning('WeChat Work notification failed: %s', error_msg)
+        return {'error': 'Failed to send notification', 'status': msg_response.status_code}
             
-    except Exception as e:
-        print(f'❌ Failed to send WeChat Work notification: {e}')
-        return {'error': f'Failed to send notification: {str(e)}', 'status': 500}
+    except Exception:
+        logger.exception('Failed to send WeChat Work notification')
+        return {'error': 'Failed to send notification', 'status': 500}
 
 
 # ============================================
@@ -149,11 +148,12 @@ def health_check():
             'database_name': 'food_menu_db',
             'service': 'Food Menu API'
         }), 200
-    except Exception as e:
+    except Exception:
+        logger.exception('Food menu health check failed')
         return jsonify({
             'status': 'unhealthy',
             'database': 'disconnected',
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -192,10 +192,11 @@ def get_dishes():
             'skip': skip
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to get dishes')
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -232,10 +233,11 @@ def create_dish():
             'message': 'Dish created successfully'
         }), 201
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to create dish')
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -257,10 +259,11 @@ def get_dish(dish_id):
             'data': serialize_doc(dish)
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to get dish: %s', dish_id)
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -295,10 +298,11 @@ def update_dish(dish_id):
             'message': 'Dish updated successfully'
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to update dish: %s', dish_id)
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -325,10 +329,11 @@ def delete_dish(dish_id):
             'message': 'Dish deleted successfully'
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to delete dish: %s', dish_id)
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -354,10 +359,11 @@ def update_dish_stock(dish_id):
             'data': serialize_doc(updated_dish)
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to update dish stock: %s', dish_id)
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -374,10 +380,11 @@ def get_popular_dishes():
             'data': serialize_doc(dishes)
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to get popular dishes')
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -401,10 +408,11 @@ def search_dishes():
             'data': serialize_doc(dishes)
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to search dishes')
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -506,10 +514,11 @@ def create_order():
             'order_number': order_number
         }), 201
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to create order')
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -546,10 +555,11 @@ def get_orders():
             'skip': skip
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to get orders')
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -584,10 +594,11 @@ def get_order(order_number):
             'data': order_data
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to get order: %s', order_number)
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -634,10 +645,11 @@ def update_order(order_number):
             'message': 'Order updated successfully'
         }), 200
 
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to update order: %s', order_number)
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -676,10 +688,11 @@ def update_order_status(order_number):
             'data': serialize_doc(order)
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to update order status: %s', order_number)
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -775,11 +788,11 @@ def update_order_items(order_number):
             'message': 'Order items updated successfully'
         }), 200
 
-    except Exception as e:
-        logger.error('update_order_items failed: %s', traceback.format_exc())
+    except Exception:
+        logger.exception('Failed to update order items: %s', order_number)
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -806,10 +819,11 @@ def cancel_order(order_number):
             'message': 'Order cancelled successfully'
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to cancel order: %s', order_number)
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -829,10 +843,11 @@ def get_dishes_stats():
             'data': serialize_doc(stats)
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to get dish stats')
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 
@@ -848,10 +863,11 @@ def get_orders_stats():
             'data': serialize_doc(stats)
         }), 200
         
-    except Exception as e:
+    except Exception:
+        logger.exception('Failed to get order stats')
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': 'Internal server error'
         }), 500
 
 

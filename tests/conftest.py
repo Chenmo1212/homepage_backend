@@ -45,7 +45,7 @@ def clean_db(app):
     """Drop all business collections after each test to keep tests isolated."""
     yield
     from app import message_mongo, food_menu_mongo, ddt_ota_mongo
-    for collection in ("entries", "dishes", "food_orders", "food_order_items"):
+    for collection in ("entries", "dishes", "orders", "order_items"):
         message_mongo.db[collection].drop()
         food_menu_mongo.db[collection].drop()
     for collection in ("ddt_ota_checks", "ddt_ota_events"):

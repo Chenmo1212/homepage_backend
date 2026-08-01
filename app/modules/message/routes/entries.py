@@ -1,8 +1,12 @@
+import logging
+
 from flask import Blueprint, jsonify, request
 from app.modules.message.models.entry import Entry
 from app.modules.message.validators.schema_validator import validator
 from app.modules.message.config.type_manager import type_manager
 from app.modules.message.notifications.notification_service import send_notification
+
+logger = logging.getLogger(__name__)
 
 entries_bp = Blueprint('entries', __name__, url_prefix='/message/entries')
 
@@ -59,8 +63,9 @@ def get_entries():
             'status': 200
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to get entries')
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @entries_bp.route('', methods=['POST'])
@@ -108,9 +113,9 @@ def create_entry():
         # Send notification
         try:
             send_notification(entry_type, metadata, data.get('source'))
-        except Exception as e:
+        except Exception:
             # Notification failure does not affect entry creation
-            print(f'Notification failed: {str(e)}')
+            logger.exception('Notification failed for entry type: %s', entry_type)
         
         return jsonify({
             'msg': 'Entry created successfully',
@@ -118,8 +123,9 @@ def create_entry():
             'status': 200
         }), 200
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to create entry')
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @entries_bp.route('/<string:entry_id>', methods=['GET'])
@@ -146,8 +152,9 @@ def get_entry(entry_id):
         
         return jsonify({'data': entry_dict, 'status': 200})
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to get entry: %s', entry_id)
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @entries_bp.route('/<string:entry_id>', methods=['PUT'])
@@ -194,8 +201,9 @@ def update_entry(entry_id):
             'status': 200
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to update entry: %s', entry_id)
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @entries_bp.route('/<string:entry_id>', methods=['DELETE'])
@@ -222,8 +230,9 @@ def delete_entry(entry_id):
             'status': 200
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to delete entry: %s', entry_id)
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 
 @entries_bp.route('/batch-delete', methods=['POST'])
@@ -246,7 +255,8 @@ def batch_delete_entries():
             'status': 200
         })
     
-    except Exception as e:
-        return jsonify({'error': str(e), 'status': 500}), 500
+    except Exception:
+        logger.exception('Failed to batch delete entries')
+        return jsonify({'error': 'Internal server error', 'status': 500}), 500
 
 # Made with Bob

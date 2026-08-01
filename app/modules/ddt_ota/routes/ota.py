@@ -56,8 +56,8 @@ def check_update():
 
     try:
         bundle = fetch_latest_bundle()
-    except Exception as e:
-        logger.error('"Failed to fetch version.json: %s"', str(e))
+    except Exception:
+        logger.exception('Failed to fetch version.json')
         return jsonify({"error": "could not fetch version info"}), 502
 
     latest_version = bundle.get("version")
@@ -67,8 +67,8 @@ def check_update():
     try:
         from app.modules.ddt_ota.models.analytics import record_ota_check
         record_ota_check(app_info, latest_version, update_available)
-    except Exception as e:
-        logger.error('"[ota-analytics] ddt_ota_checks insert failed: %s"', str(e))
+    except Exception:
+        logger.exception('[ota-analytics] ddt_ota_checks insert failed')
 
     if update_available:
         logger.info('"Update available: %s -> %s"', current_version, latest_version)
@@ -119,8 +119,8 @@ def record_event():
             occurred_at=occurred_at,
             error_message=error_message,
         )
-    except Exception as e:
-        logger.error('"[ota-analytics] ddt_ota_events insert failed: %s"', str(e))
+    except Exception:
+        logger.exception('[ota-analytics] ddt_ota_events insert failed')
         return jsonify({"ok": False, "error": "failed to record event"}), 500
 
     return jsonify({"ok": True}), 201

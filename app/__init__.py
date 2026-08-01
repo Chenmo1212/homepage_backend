@@ -2,14 +2,62 @@ from flask import Flask, render_template_string, request
 from flask_pymongo import PyMongo
 from app.auth import requires_auth
 from dotenv import load_dotenv
+from logging.handlers import TimedRotatingFileHandler
 import os
 import json
 import logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(name)s: %(message)s'
-)
+LOG_FORMAT = '%(asctime)s %(levelname)s %(name)s: %(message)s'
+LOGGER = logging.getLogger(__name__)
+
+
+class ColorFormatter(logging.Formatter):
+    COLORS = {
+        logging.DEBUG: '\033[36m',
+        logging.INFO: '\033[32m',
+        logging.WARNING: '\033[33m',
+        logging.ERROR: '\033[31m',
+        logging.CRITICAL: '\033[35m',
+    }
+    RESET = '\033[0m'
+
+    def format(self, record):
+        formatted = super().format(record)
+        color = self.COLORS.get(record.levelno)
+        if not color:
+            return formatted
+        return f'{color}{formatted}{self.RESET}'
+
+
+def configure_logging(flask_app):
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
+
+    log_level = getattr(logging, flask_app.config.get('LOG_LEVEL', 'INFO').upper(), logging.INFO)
+    root_logger.setLevel(log_level)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(log_level)
+    console_handler.setFormatter(ColorFormatter(LOG_FORMAT))
+    root_logger.addHandler(console_handler)
+
+    if flask_app.config.get('LOG_TO_FILE'):
+        log_dir = os.path.join(flask_app.root_path, '..', 'logs')
+        os.makedirs(log_dir, exist_ok=True)
+        file_handler = TimedRotatingFileHandler(
+            os.path.join(log_dir, 'app.log'),
+            when='midnight',
+            backupCount=30,
+            encoding='utf-8'
+        )
+        file_handler.setLevel(log_level)
+        file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+        file_handler.suffix = '%Y-%m-%d'
+        root_logger.addHandler(file_handler)
+
+    flask_app.logger.handlers.clear()
+    flask_app.logger.propagate = True
+    flask_app.logger.setLevel(log_level)
 
 # Load environment variables from .env file
 # This will load variables from .env file into os.environ
@@ -26,10 +74,11 @@ try:
         app.config.from_object('config_production')
     else:
         app.config.from_object('config_development')
-except ImportError as e:
-    print(f"Warning: Could not load config file: {e}")
-    print("Please create config_development.py or config_production.py with MONGO_URI")
+except ImportError:
+    LOGGER.exception('Could not load Flask config for environment %s', os.getenv('FLASK_ENV', 'development'))
     raise
+
+configure_logging(app)
 
 app.debug = True
 
@@ -92,13 +141,17 @@ def serve_swagger_json(filename):
         
         return swagger_data
     except FileNotFoundError:
+        LOGGER.warning('Swagger specification file not found: %s', filename)
         return {'error': 'Swagger specification file not found'}, 404
-    except json.JSONDecodeError as e:
-        return {'error': f'Invalid JSON in swagger file: {str(e)}'}, 500
+    except json.JSONDecodeError:
+        LOGGER.exception('Invalid JSON in swagger file: %s', filename)
+        return {'error': 'Invalid JSON in swagger file'}, 500
     except PermissionError:
+        LOGGER.exception('Permission denied reading swagger file: %s', filename)
         return {'error': 'Permission denied reading swagger file'}, 500
-    except Exception as e:
-        return {'error': f'Error loading swagger specification: {str(e)}'}, 500
+    except Exception:
+        LOGGER.exception('Error loading swagger specification: %s', filename)
+        return {'error': 'Error loading swagger specification'}, 500
 
 
 # Dynamically create routes for each swagger file
