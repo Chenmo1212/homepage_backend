@@ -1,7 +1,7 @@
 """
 tests/test_food_menu.py
 ========================
-Integration tests for the food_menu module: /api/food-menu
+Integration tests for the food_menu module: /food-menu
 
 Endpoint groups:
   Health:  GET  /health
@@ -30,7 +30,7 @@ VALID_DISH = {
 
 def _create_dish(client, data=None):
     """Helper: create a dish and return the response."""
-    return client.post("/api/food-menu/dishes", json=data or VALID_DISH)
+    return client.post("/food-menu/dishes", json=data or VALID_DISH)
 
 
 def _get_dish_id(client, data=None):
@@ -46,7 +46,7 @@ def _get_dish_id(client, data=None):
 
 def test_health_check(client):
     """Database connected (mongomock); health endpoint returns healthy"""
-    resp = client.get("/api/food-menu/health")
+    resp = client.get("/food-menu/health")
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["status"] == "healthy"
@@ -59,7 +59,7 @@ def test_health_check(client):
 
 def test_get_dishes_empty(client):
     """Empty database returns total=0"""
-    resp = client.get("/api/food-menu/dishes")
+    resp = client.get("/food-menu/dishes")
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["success"] is True
@@ -79,7 +79,7 @@ def test_create_dish_success(client):
 
 def test_create_dish_missing_field(client):
     """Missing required field name → 400"""
-    resp = client.post("/api/food-menu/dishes", json={
+    resp = client.post("/food-menu/dishes", json={
         "name_en": "No Name", "price": 10.0, "category": "Main"
     })
     assert resp.status_code == 400
@@ -88,7 +88,7 @@ def test_create_dish_missing_field(client):
 
 def test_create_dish_invalid_price(client):
     """price = 0 → 400"""  # message stays in English as it matches the assertion string
-    resp = client.post("/api/food-menu/dishes", json={
+    resp = client.post("/food-menu/dishes", json={
         **VALID_DISH, "price": 0
     })
     assert resp.status_code == 400
@@ -102,14 +102,14 @@ def test_create_dish_invalid_price(client):
 def test_get_dish_by_id(client):
     """Create then fetch by ID; returns the correct dish"""
     dish_id = _get_dish_id(client)
-    resp = client.get(f"/api/food-menu/dishes/{dish_id}")
+    resp = client.get(f"/food-menu/dishes/{dish_id}")
     assert resp.status_code == 200
     assert resp.get_json()["data"]["name"] == "Braised Pork"
 
 
 def test_get_dish_not_found(client):
     """Non-existent ID → 404"""
-    resp = client.get("/api/food-menu/dishes/000000000000000000000001")
+    resp = client.get("/food-menu/dishes/000000000000000000000001")
     assert resp.status_code == 404
 
 
@@ -117,7 +117,7 @@ def test_update_dish_price(client):
     """PATCH updates price; new value is readable via GET"""
     dish_id = _get_dish_id(client)
 
-    resp = client.patch(f"/api/food-menu/dishes/{dish_id}", json={"price": 45.0})
+    resp = client.patch(f"/food-menu/dishes/{dish_id}", json={"price": 45.0})
     assert resp.status_code == 200
     assert resp.get_json()["data"]["price"] == 45.0
 
@@ -126,7 +126,7 @@ def test_delete_dish_soft(client):
     """DELETE performs a soft delete; is_active becomes False"""
     dish_id = _get_dish_id(client)
 
-    resp = client.delete(f"/api/food-menu/dishes/{dish_id}")
+    resp = client.delete(f"/food-menu/dishes/{dish_id}")
     assert resp.status_code == 200
     assert resp.get_json()["data"]["is_active"] is False
 
@@ -148,7 +148,7 @@ def test_create_order_success(client):
     dish_id = _get_dish_id(client)
 
     with patch(PATCH_WECHAT):
-        resp = client.post("/api/food-menu/orders", json=_order_payload(dish_id, quantity=2))
+        resp = client.post("/food-menu/orders", json=_order_payload(dish_id, quantity=2))
 
     assert resp.status_code == 201
     body = resp.get_json()
@@ -156,13 +156,13 @@ def test_create_order_success(client):
     assert "order_number" in body
 
     # Stock should be decremented: 10 - 2 = 8
-    dish_resp = client.get(f"/api/food-menu/dishes/{dish_id}")
+    dish_resp = client.get(f"/food-menu/dishes/{dish_id}")
     assert dish_resp.get_json()["data"]["stock"] == 8
 
 
 def test_create_order_missing_field(client):
     """Missing delivery_date → 400"""
-    resp = client.post("/api/food-menu/orders", json={
+    resp = client.post("/food-menu/orders", json={
         "delivery_time": "12:00",
         "items": []
     })
@@ -172,7 +172,7 @@ def test_create_order_missing_field(client):
 
 def test_create_order_empty_items(client):
     """Empty items list → 400"""
-    resp = client.post("/api/food-menu/orders", json={
+    resp = client.post("/food-menu/orders", json={
         "delivery_date": "2025-12-01",
         "delivery_time": "12:00",
         "items": []
@@ -185,7 +185,7 @@ def test_create_order_insufficient_stock(client):
     """Insufficient stock (stock=1, ordering 2) → 400"""
     dish_id = _get_dish_id(client, {**VALID_DISH, "stock": 1})
 
-    resp = client.post("/api/food-menu/orders", json=_order_payload(dish_id, quantity=2))
+    resp = client.post("/food-menu/orders", json=_order_payload(dish_id, quantity=2))
     assert resp.status_code == 400
     assert "Insufficient stock" in resp.get_json()["error"]
 
@@ -199,11 +199,11 @@ def test_get_order_by_number(client):
     dish_id = _get_dish_id(client)
 
     with patch(PATCH_WECHAT):
-        create_resp = client.post("/api/food-menu/orders", json=_order_payload(dish_id))
+        create_resp = client.post("/food-menu/orders", json=_order_payload(dish_id))
 
     order_number = create_resp.get_json()["order_number"]
 
-    resp = client.get(f"/api/food-menu/orders/{order_number}")
+    resp = client.get(f"/food-menu/orders/{order_number}")
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["data"]["order_number"] == order_number
@@ -219,12 +219,12 @@ def test_update_order_status(client):
     dish_id = _get_dish_id(client)
 
     with patch(PATCH_WECHAT):
-        create_resp = client.post("/api/food-menu/orders", json=_order_payload(dish_id))
+        create_resp = client.post("/food-menu/orders", json=_order_payload(dish_id))
 
     order_number = create_resp.get_json()["order_number"]
 
     resp = client.patch(
-        f"/api/food-menu/orders/{order_number}/status",
+        f"/food-menu/orders/{order_number}/status",
         json={"status": "confirmed"}
     )
     assert resp.status_code == 200
@@ -240,20 +240,20 @@ def test_cancel_order(client):
     dish_id = _get_dish_id(client)  # stock=10
 
     with patch(PATCH_WECHAT):
-        create_resp = client.post("/api/food-menu/orders", json=_order_payload(dish_id, quantity=3))
+        create_resp = client.post("/food-menu/orders", json=_order_payload(dish_id, quantity=3))
 
     order_number = create_resp.get_json()["order_number"]
 
     # Stock should be decremented after order: 10 - 3 = 7
-    dish_resp = client.get(f"/api/food-menu/dishes/{dish_id}")
+    dish_resp = client.get(f"/food-menu/dishes/{dish_id}")
     assert dish_resp.get_json()["data"]["stock"] == 7
 
     # Cancel the order
-    cancel_resp = client.delete(f"/api/food-menu/orders/{order_number}")
+    cancel_resp = client.delete(f"/food-menu/orders/{order_number}")
     assert cancel_resp.status_code == 200
 
     # Stock should be restored to 10
-    dish_resp2 = client.get(f"/api/food-menu/dishes/{dish_id}")
+    dish_resp2 = client.get(f"/food-menu/dishes/{dish_id}")
     assert dish_resp2.get_json()["data"]["stock"] == 10
 
 
@@ -266,7 +266,7 @@ def test_get_dishes_stats(client):
     _create_dish(client)
     _create_dish(client, {**VALID_DISH, "name": "Steamed Fish", "name_en": "Steamed Fish"})
 
-    resp = client.get("/api/food-menu/stats/dishes")
+    resp = client.get("/food-menu/stats/dishes")
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["success"] is True
@@ -279,9 +279,9 @@ def test_get_orders_stats(client):
     dish_id = _get_dish_id(client)
 
     with patch(PATCH_WECHAT):
-        client.post("/api/food-menu/orders", json=_order_payload(dish_id, quantity=1))
+        client.post("/food-menu/orders", json=_order_payload(dish_id, quantity=1))
 
-    resp = client.get("/api/food-menu/stats/orders")
+    resp = client.get("/food-menu/stats/orders")
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["success"] is True
