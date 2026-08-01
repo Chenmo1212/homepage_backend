@@ -220,8 +220,8 @@ class OrderModel:
         Args:
             db: MongoDB database instance
         """
-        self.collection = db['food_orders']
-        self.items_collection = db['food_order_items']
+        self.collection = db['orders']
+        self.items_collection = db['order_items']
     
     def generate_order_number(self):
         """
@@ -378,7 +378,7 @@ class StatsModel:
             db: MongoDB database instance
         """
         self.dishes_collection = db['dishes']
-        self.orders_collection = db['food_orders']
+        self.orders_collection = db['orders']
     
     def get_dishes_stats(self):
         """Get statistics about dishes."""
