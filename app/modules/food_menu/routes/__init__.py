@@ -13,7 +13,7 @@ import json
 import os
 
 # Create blueprint with url_prefix
-food_menu_bp = Blueprint('food_menu', __name__, url_prefix='/api/food-menu')
+food_menu_bp = Blueprint('food_menu', __name__, url_prefix='/food-menu')
 
 
 # ============================================
