@@ -1,6 +1,5 @@
 from flask import Flask, render_template_string, request
 from flask_pymongo import PyMongo
-from flask_cors import CORS
 from app.auth import requires_auth
 from dotenv import load_dotenv
 import os
@@ -12,9 +11,6 @@ import json
 load_dotenv()
 
 app = Flask(__name__)
-
-# Allow the food-menu frontend to call this API
-CORS(app, resources={r"/food-menu/*": {"origins": "https://menu.chenmo1212.cn"}})
 
 # Load configuration based on FLASK_ENV environment variable
 # FLASK_ENV can be set in .env file or as a system environment variable
