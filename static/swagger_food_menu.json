@@ -37,7 +37,7 @@
     }
   ],
   "paths": {
-    "/api/food-menu/health": {
+    "/food-menu/health": {
       "get": {
         "tags": ["Health"],
         "summary": "Health check",
@@ -80,7 +80,7 @@
         }
       }
     },
-    "/api/food-menu/dishes": {
+    "/food-menu/dishes": {
       "get": {
         "tags": ["Dishes"],
         "summary": "Get dishes list",
@@ -187,7 +187,7 @@
         }
       }
     },
-    "/api/food-menu/dishes/{dish_id}": {
+    "/food-menu/dishes/{dish_id}": {
       "get": {
         "tags": ["Dishes"],
         "summary": "Get dish by ID",
@@ -236,7 +236,7 @@
         }
       }
     },
-    "/api/food-menu/dishes/{dish_id}/stock": {
+    "/food-menu/dishes/{dish_id}/stock": {
       "patch": {
         "tags": ["Dishes"],
         "summary": "Update dish stock",
@@ -303,7 +303,7 @@
         }
       }
     },
-    "/api/food-menu/dishes/popular": {
+    "/food-menu/dishes/popular": {
       "get": {
         "tags": ["Dishes"],
         "summary": "Get popular dishes",
@@ -345,7 +345,7 @@
         }
       }
     },
-    "/api/food-menu/dishes/search": {
+    "/food-menu/dishes/search": {
       "get": {
         "tags": ["Dishes"],
         "summary": "Search dishes",
@@ -397,7 +397,7 @@
         }
       }
     },
-    "/api/food-menu/orders": {
+    "/food-menu/orders": {
       "post": {
         "tags": ["Orders"],
         "summary": "Create order",
@@ -543,7 +543,7 @@
         }
       }
     },
-    "/api/food-menu/orders/{order_number}": {
+    "/food-menu/orders/{order_number}": {
       "get": {
         "tags": ["Orders"],
         "summary": "Get order details",
@@ -640,7 +640,7 @@
         }
       }
     },
-    "/api/food-menu/orders/{order_number}/status": {
+    "/food-menu/orders/{order_number}/status": {
       "patch": {
         "tags": ["Orders"],
         "summary": "Update order status",
@@ -717,7 +717,7 @@
         }
       }
     },
-    "/api/food-menu/stats/dishes": {
+    "/food-menu/stats/dishes": {
       "get": {
         "tags": ["Statistics"],
         "summary": "Get dish statistics",
@@ -745,7 +745,7 @@
         }
       }
     },
-    "/api/food-menu/stats/orders": {
+    "/food-menu/stats/orders": {
       "get": {
         "tags": ["Statistics"],
         "summary": "Get order statistics",
