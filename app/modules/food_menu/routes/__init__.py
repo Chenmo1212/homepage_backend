@@ -463,9 +463,11 @@ def create_order():
                 'dish_id': dish_id,
                 'dish_name': dish['name'],
                 'dish_name_en': dish.get('name_en', ''),
+                'category': dish.get('category', ''),
                 'price': dish['price'],
                 'quantity': quantity,
-                'subtotal': subtotal
+                'subtotal': subtotal,
+                'is_custom': dish.get('is_custom', False)
             })
             
             dish_model.update_stock(dish_id, -quantity)
@@ -741,9 +743,11 @@ def update_order_items(order_number):
                 'dish_id': dish_id,
                 'dish_name': dish['name'],
                 'dish_name_en': dish.get('name_en', ''),
+                'category': dish.get('category', ''),
                 'price': dish['price'],
                 'quantity': quantity,
                 'subtotal': subtotal,
+                'is_custom': dish.get('is_custom', False),
                 'custom_notes': item.get('custom_notes', '')
             })
 
