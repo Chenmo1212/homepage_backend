@@ -677,6 +677,103 @@ def update_order_status(order_number):
         }), 500
 
 
+@food_menu_bp.route('/orders/<order_number>/items', methods=['PUT'])
+def update_order_items(order_number):
+    """Replace all items of an order (full overwrite)."""
+    try:
+        dish_model, order_model, _ = get_models()
+        data = request.get_json()
+
+        items_input = data.get('items')
+        if items_input is None:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required field: items'
+            }), 400
+
+        order = order_model.find_by_order_number(order_number)
+        if not order:
+            return jsonify({
+                'success': False,
+                'error': 'Order not found'
+            }), 404
+
+        # Restore stock / order_count for the existing items
+        old_items = order_model.find_items_by_order_number(order_number)
+        for old_item in old_items:
+            dish_model.update_stock(old_item['dish_id'], old_item['quantity'])
+            dish_model.increment_order_count(old_item['dish_id'], -old_item['quantity'])
+
+        # Build new items and deduct stock
+        total_amount = 0
+        total_items = 0
+        new_items_data = []
+
+        for item in items_input:
+            dish_id = item.get('dish_id')
+            quantity = item.get('quantity', 1)
+
+            if not dish_id or quantity <= 0:
+                continue
+
+            dish = dish_model.find_by_object_id(dish_id)
+            if not dish:
+                return jsonify({
+                    'success': False,
+                    'error': f'Dish not found: {dish_id}'
+                }), 404
+
+            if dish['stock'] < quantity:
+                return jsonify({
+                    'success': False,
+                    'error': f'Insufficient stock for dish: {dish["name"]}'
+                }), 400
+
+            subtotal = dish['price'] * quantity
+            total_amount += subtotal
+            total_items += quantity
+
+            new_items_data.append({
+                'dish_id': dish_id,
+                'dish_name': dish['name'],
+                'dish_name_en': dish.get('name_en', ''),
+                'price': dish['price'],
+                'quantity': quantity,
+                'subtotal': subtotal,
+                'custom_notes': item.get('custom_notes', '')
+            })
+
+            dish_model.update_stock(dish_id, -quantity)
+            dish_model.increment_order_count(dish_id, quantity)
+
+        order_id = order['_id']
+        order_model.replace_order_items(order_number, order_id, new_items_data)
+
+        # Sync totals on the order document
+        order_model.update_order(order_number, {
+            'total_amount': round(total_amount, 2),
+            'total_items': total_items
+        })
+
+        updated_order = order_model.find_by_order_number(order_number)
+        updated_items = order_model.find_items_by_order_number(order_number)
+
+        return jsonify({
+            'success': True,
+            'data': {
+                **serialize_doc(updated_order),
+                'items': serialize_doc(updated_items)
+            },
+            'message': 'Order items updated successfully'
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @food_menu_bp.route('/orders/<order_number>', methods=['DELETE'])
 def cancel_order(order_number):
     """Cancel an order."""

@@ -351,6 +351,25 @@ class OrderModel:
         
         return self.find_by_order_number(order_number)
     
+    def replace_order_items(self, order_number, order_id, new_items_data):
+        """
+        Fully replace all items for an order.
+
+        Args:
+            order_number (str): Order number
+            order_id (ObjectId): Order _id
+            new_items_data (list): New items, each must have dish_id, dish_name,
+                                   dish_name_en, price, quantity, subtotal,
+                                   and optionally custom_notes.
+
+        Returns:
+            bool: True if replaced successfully
+        """
+        self.items_collection.delete_many({'order_number': order_number})
+        if new_items_data:
+            self.insert_order_items(order_id, order_number, new_items_data)
+        return True
+
     def cancel_order(self, order_number):
         """Cancel an order and return items for stock restoration."""
         order = self.find_by_order_number(order_number)
