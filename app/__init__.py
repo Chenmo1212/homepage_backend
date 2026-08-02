@@ -203,14 +203,14 @@ API_DOCS = [
 ]
 
 
-def render_swagger_ui(title, swagger_file):
+def render_scalar_ui(title, swagger_file):
     """
-    Generic function to render Swagger UI page.
-    
+    Generic function to render Scalar API reference page.
+
     Args:
         title: Page title
         swagger_file: Name of the swagger JSON file
-    
+
     Returns:
         Rendered HTML template
     """
@@ -220,12 +220,10 @@ def render_swagger_ui(title, swagger_file):
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css">
     <style>
-        html { box-sizing: border-box; overflow: -moz-scrollbars-vertical; overflow-y: scroll; }
-        *, *:before, *:after { box-sizing: inherit; }
-        body { margin:0; padding:0; }
+        body { margin: 0; padding: 0; }
         .back-link {
             position: fixed;
             top: 16px;
@@ -249,36 +247,8 @@ def render_swagger_ui(title, swagger_file):
 </head>
 <body>
     <a href="{{ base_path }}/" class="back-link">← Back to API List</a>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
-    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
-    <script>
-        window.onload = function() {
-            // Get the current origin (protocol + domain + port)
-            const origin = window.location.origin;
-            // Construct the full URL with base path
-            const swaggerUrl = origin + "{{ base_path }}/static/{{ swagger_file }}";
-            
-            const ui = SwaggerUIBundle({
-                url: swaggerUrl,
-                dom_id: '#swagger-ui',
-                deepLinking: true,
-                presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIStandalonePreset
-                ],
-                // Remove DownloadUrl plugin to prevent validation errors with subdirectory deployment
-                plugins: [],
-                layout: "StandaloneLayout",
-                docExpansion: "list",
-                defaultModelsExpandDepth: 3,
-                displayRequestDuration: true,
-                // Disable validator to prevent it from trying to fetch the spec from the wrong URL
-                validatorUrl: null
-            });
-            window.ui = ui;
-        };
-    </script>
+    <script id="api-reference" data-url="{{ base_path }}/static/{{ swagger_file }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@latest/dist/browser/standalone.min.js"></script>
 </body>
 </html>
     ''', base_path=base_path, title=title, swagger_file=swagger_file)
@@ -466,7 +436,7 @@ def api_docs_index():
         </div>
 
         <div class="footer">
-            Swagger UI &mdash; OpenAPI 3.0
+            Scalar &mdash; OpenAPI 3.0
         </div>
     </div>
 </body>
@@ -474,13 +444,13 @@ def api_docs_index():
     ''', base_path=base_path, apis=API_DOCS)
 
 
-# Dynamically create Swagger UI routes for each API
+# Dynamically create Scalar UI routes for each API
 for api_doc in API_DOCS:
     # Use a factory function to properly capture the api_doc in closure
     def create_swagger_ui_route(api):
         @requires_auth
         def swagger_ui():
-            return render_swagger_ui(f'{api["title"]} Documentation', api['swagger_file'])
+            return render_scalar_ui(f'{api["title"]} Documentation', api['swagger_file'])
         # Set unique function name before registering
         swagger_ui.__name__ = f'swagger_ui_{api["route"].replace("-", "_")}'
         return swagger_ui

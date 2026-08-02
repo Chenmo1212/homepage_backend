@@ -62,34 +62,29 @@
                     "success": {
                       "type": "boolean",
                       "example": true
-                    },
-                    "status": {
-                      "type": "integer",
-                      "example": 200
                     }
                   }
                 },
                 "example": {
-                  "success": true,
-                  "status": 200
+                  "success": true
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request - Missing required fields",
+            "description": "Bad request - Missing or invalid request body",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
                     "error": {
                       "type": "string",
-                      "example": "Missing required fields: postId and password"
-                    },
-                    "status": {
-                      "type": "integer",
-                      "example": 400
+                      "example": "Missing password"
                     }
                   }
                 }
@@ -103,33 +98,13 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
                     "error": {
                       "type": "string",
                       "example": "Incorrect password"
-                    },
-                    "status": {
-                      "type": "integer",
-                      "example": 401
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found - Post does not exist",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "example": "Post not found"
-                    },
-                    "status": {
-                      "type": "integer",
-                      "example": 404
                     }
                   }
                 }
@@ -137,19 +112,19 @@
             }
           },
           "500": {
-            "description": "Internal server error",
+            "description": "Internal server error - Server misconfiguration or unexpected error",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
                     "error": {
                       "type": "string",
-                      "example": "Internal server error"
-                    },
-                    "status": {
-                      "type": "integer",
-                      "example": 500
+                      "example": "Server configuration error"
                     }
                   }
                 }

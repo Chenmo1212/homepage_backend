@@ -123,13 +123,96 @@
       "post": {
         "tags": ["Entries"],
         "summary": "Create new entry",
-        "description": "Create a new entry with validation",
+        "description": "Create a new entry with validation.\n\n`metadata` fields depend on `type`:\n- **message** (required: `name`, `email`, `content`; optional: `website`)\n- **feedback** (required: `project_name`, `content`; optional: `rating` 1-5, `category` bug/feature/improvement/question, `contact`)\n- **notification** (required: `title`, `content`; optional: `priority` high/medium/low, `target_user`)",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateEntryRequest"
+                "type": "object",
+                "required": ["type", "metadata"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["message", "feedback", "notification"],
+                    "description": "required · Entry 类型，决定 metadata 的字段结构 · enum: message | feedback | notification",
+                    "example": "message"
+                  },
+                  "metadata": {
+                    "description": "required · 随 type 变化的业务字段；type=message 时展开 MessageMetadata，type=feedback 时展开 FeedbackMetadata，type=notification 时展开 NotificationMetadata",
+                    "oneOf": [
+                      { "$ref": "#/components/schemas/MessageMetadata" },
+                      { "$ref": "#/components/schemas/FeedbackMetadata" },
+                      { "$ref": "#/components/schemas/NotificationMetadata" }
+                    ],
+                    "discriminator": {
+                      "propertyName": "type",
+                      "mapping": {
+                        "message": "#/components/schemas/MessageMetadata",
+                        "feedback": "#/components/schemas/FeedbackMetadata",
+                        "notification": "#/components/schemas/NotificationMetadata"
+                      }
+                    }
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "optional · 来源标识，例如 homepage、portfolio、mobile",
+                    "example": "homepage"
+                  },
+                  "agent": {
+                    "type": "string",
+                    "description": "optional · 浏览器 User-Agent 字符串",
+                    "example": "Mozilla/5.0 ..."
+                  },
+                  "tags": {
+                    "type": "array",
+                    "description": "optional · 标签列表",
+                    "items": { "type": "string" },
+                    "example": ["homepage"]
+                  }
+                }
+              },
+              "examples": {
+                "message": {
+                  "summary": "type=message — 用户留言",
+                  "value": {
+                    "type": "message",
+                    "metadata": {
+                      "name": "张三",
+                      "email": "zhangsan@example.com",
+                      "website": "https://zhangsan.dev",
+                      "content": "这个项目做得很棒！"
+                    },
+                    "source": "homepage",
+                    "tags": ["homepage"]
+                  }
+                },
+                "feedback": {
+                  "summary": "type=feedback — 项目反馈",
+                  "value": {
+                    "type": "feedback",
+                    "metadata": {
+                      "project_name": "bob-learning",
+                      "rating": 5,
+                      "category": "feature",
+                      "content": "希望支持更多语言",
+                      "contact": "user@example.com"
+                    },
+                    "source": "portfolio"
+                  }
+                },
+                "notification": {
+                  "summary": "type=notification — 系统通知",
+                  "value": {
+                    "type": "notification",
+                    "metadata": {
+                      "title": "系统维护通知",
+                      "content": "今晚 22:00-23:00 进行例行维护",
+                      "priority": "high",
+                      "target_user": "admin"
+                    }
+                  }
+                }
               }
             }
           }
@@ -159,6 +242,11 @@
                       "example": 200
                     }
                   }
+                },
+                "example": {
+                  "msg": "Entry created successfully",
+                  "data": { "id": "507f1f77bcf86cd799439011" },
+                  "status": 200
                 }
               }
             }
@@ -219,15 +307,16 @@
       "put": {
         "tags": ["Entries"],
         "summary": "Update entry",
-        "description": "Update an existing entry",
+        "description": "Update an existing entry. All fields are optional — only supplied fields are overwritten.",
         "parameters": [
           {
             "name": "entry_id",
             "in": "path",
             "required": true,
-            "description": "Entry ID",
+            "description": "Entry ID (MongoDB ObjectId string)",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "507f1f77bcf86cd799439011"
             }
           }
         ],
@@ -236,7 +325,56 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateEntryRequest"
+                "type": "object",
+                "description": "所有字段均为 optional，仅传入的字段会被覆盖",
+                "properties": {
+                  "metadata": {
+                    "description": "optional · 更新后的业务字段，结构与创建时相同，展开下方 oneOf 查看每种类型的完整字段",
+                    "oneOf": [
+                      { "$ref": "#/components/schemas/MessageMetadata" },
+                      { "$ref": "#/components/schemas/FeedbackMetadata" },
+                      { "$ref": "#/components/schemas/NotificationMetadata" }
+                    ]
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "optional · 来源标识",
+                    "example": "mobile"
+                  },
+                  "status": {
+                    "description": "optional · 状态标志，传入任意组合的子字段",
+                    "$ref": "#/components/schemas/Status"
+                  },
+                  "agent": {
+                    "type": "string",
+                    "description": "optional · 浏览器 User-Agent 字符串"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "description": "optional · 标签列表",
+                    "items": { "type": "string" },
+                    "example": ["important", "reviewed"]
+                  }
+                }
+              },
+              "examples": {
+                "update_metadata": {
+                  "summary": "仅更新 metadata 内容",
+                  "value": {
+                    "metadata": {
+                      "name": "张三（已修改）",
+                      "email": "new@example.com",
+                      "content": "更新后的留言内容"
+                    }
+                  }
+                },
+                "update_tags": {
+                  "summary": "仅更新标签和来源",
+                  "value": {
+                    "source": "mobile",
+                    "tags": ["important", "reviewed"]
+                  }
+                }
               }
             }
           }
@@ -322,7 +460,7 @@
       "post": {
         "tags": ["Entries"],
         "summary": "Batch delete entries",
-        "description": "Delete multiple entries at once",
+        "description": "Permanently delete multiple entries by ID list.",
         "requestBody": {
           "required": true,
           "content": {
@@ -333,12 +471,16 @@
                 "properties": {
                   "id_list": {
                     "type": "array",
+                    "description": "List of Entry IDs (MongoDB ObjectId strings) to delete",
                     "items": {
                       "type": "string"
                     },
                     "example": ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"]
                   }
                 }
+              },
+              "example": {
+                "id_list": ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"]
               }
             }
           }
@@ -450,15 +592,16 @@
       "put": {
         "tags": ["Admin"],
         "summary": "Update entry status",
-        "description": "Update the status fields of an entry",
+        "description": "Update the status flags of an entry. Pass any combination of `is_show`, `is_delete`, `is_read`.",
         "parameters": [
           {
             "name": "entry_id",
             "in": "path",
             "required": true,
-            "description": "Entry ID",
+            "description": "Entry ID (MongoDB ObjectId string)",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "507f1f77bcf86cd799439011"
             }
           }
         ],
@@ -470,11 +613,31 @@
                 "type": "object",
                 "properties": {
                   "is_show": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Whether the entry is publicly visible"
                   },
                   "is_delete": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Soft-delete flag"
+                  },
+                  "is_read": {
+                    "type": "boolean",
+                    "description": "Whether the entry has been read by admin"
                   }
+                }
+              },
+              "examples": {
+                "publish": {
+                  "summary": "设为公开可见",
+                  "value": { "is_show": true, "is_read": true }
+                },
+                "soft_delete": {
+                  "summary": "软删除",
+                  "value": { "is_delete": true }
+                },
+                "mark_read": {
+                  "summary": "仅标记已读",
+                  "value": { "is_read": true }
                 }
               }
             }
@@ -599,7 +762,7 @@
       "post": {
         "tags": ["Admin"],
         "summary": "Create new type",
-        "description": "Add a new entry type configuration",
+        "description": "Add a new entry type configuration. `config` must include `name` and `schema` (a valid JSON Schema object with a `type` field).",
         "requestBody": {
           "required": true,
           "content": {
@@ -610,12 +773,42 @@
                 "properties": {
                   "type": {
                     "type": "string",
-                    "example": "blog_post"
+                    "description": "Unique type identifier (snake_case)",
+                    "example": "blog_comment"
                   },
                   "config": {
                     "type": "object",
-                    "description": "Type configuration with schema"
+                    "description": "Type configuration. Required keys: `name` (string), `schema` (JSON Schema object with `type` field). Optional: `description`, `notification`.",
+                    "properties": {
+                      "name": { "type": "string" },
+                      "description": { "type": "string" },
+                      "schema": { "type": "object" },
+                      "notification": {
+                        "type": "object",
+                        "properties": {
+                          "enabled": { "type": "boolean" },
+                          "template": { "type": "string" }
+                        }
+                      }
+                    }
                   }
+                }
+              },
+              "example": {
+                "type": "blog_comment",
+                "config": {
+                  "name": "博客评论",
+                  "description": "来自博客文章的读者评论",
+                  "schema": {
+                    "type": "object",
+                    "required": ["author", "content"],
+                    "properties": {
+                      "author":  { "type": "string", "maxLength": 50 },
+                      "content": { "type": "string", "maxLength": 500 },
+                      "post_id": { "type": "string" }
+                    }
+                  },
+                  "notification": { "enabled": true, "template": "wechat_comment" }
                 }
               }
             }
@@ -701,15 +894,16 @@
       "put": {
         "tags": ["Admin"],
         "summary": "Update type configuration",
-        "description": "Update an existing type configuration",
+        "description": "Replace an existing type's configuration. Same `config` shape as POST /message/admin/types.",
         "parameters": [
           {
             "name": "type_name",
             "in": "path",
             "required": true,
-            "description": "Type name",
+            "description": "Type identifier, e.g. `message`, `feedback`, `notification`",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "message"
             }
           }
         ],
@@ -723,8 +917,25 @@
                 "properties": {
                   "config": {
                     "type": "object",
-                    "description": "Updated type configuration"
+                    "description": "Updated type configuration. Required keys: `name`, `schema`."
                   }
+                }
+              },
+              "example": {
+                "config": {
+                  "name": "留言（已更新）",
+                  "description": "来自首页的用户留言",
+                  "schema": {
+                    "type": "object",
+                    "required": ["name", "email", "content"],
+                    "properties": {
+                      "name":    { "type": "string", "maxLength": 50 },
+                      "email":   { "type": "string", "format": "email" },
+                      "website": { "type": "string" },
+                      "content": { "type": "string", "maxLength": 1000 }
+                    }
+                  },
+                  "notification": { "enabled": true, "template": "wechat_message" }
                 }
               }
             }
@@ -826,6 +1037,10 @@
           "is_delete": {
             "type": "boolean",
             "example": false
+          },
+          "is_read": {
+            "type": "boolean",
+            "example": false
           }
         }
       },
@@ -872,55 +1087,166 @@
           }
         }
       },
+      "MessageMetadata": {
+        "type": "object",
+        "description": "Metadata for type=message (用户留言)",
+        "required": ["name", "email", "content"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "required · 留言人姓名 · maxLength: 50",
+            "example": "张三"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "required · 留言人邮箱",
+            "example": "zhangsan@example.com"
+          },
+          "content": {
+            "type": "string",
+            "description": "required · 留言内容 · maxLength: 1000",
+            "example": "这个项目做得很棒！"
+          },
+          "website": {
+            "type": "string",
+            "description": "optional · 留言人个人网站 URL",
+            "example": "https://zhangsan.dev"
+          }
+        }
+      },
+      "FeedbackMetadata": {
+        "type": "object",
+        "description": "Metadata for type=feedback (项目反馈)",
+        "required": ["project_name", "content"],
+        "properties": {
+          "project_name": {
+            "type": "string",
+            "description": "required · 被反馈的项目名称 · maxLength: 100",
+            "example": "bob-learning"
+          },
+          "content": {
+            "type": "string",
+            "description": "required · 反馈内容 · maxLength: 2000",
+            "example": "希望支持更多语言"
+          },
+          "rating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "optional · 评分 · 整数 1-5",
+            "example": 5
+          },
+          "category": {
+            "type": "string",
+            "enum": ["bug", "feature", "improvement", "question"],
+            "description": "optional · 反馈类别 · enum: bug | feature | improvement | question",
+            "example": "feature"
+          },
+          "contact": {
+            "type": "string",
+            "description": "optional · 联系方式（邮箱或其他）",
+            "example": "user@example.com"
+          }
+        }
+      },
+      "NotificationMetadata": {
+        "type": "object",
+        "description": "Metadata for type=notification (系统通知)",
+        "required": ["title", "content"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "required · 通知标题 · maxLength: 100",
+            "example": "系统维护通知"
+          },
+          "content": {
+            "type": "string",
+            "description": "required · 通知正文",
+            "example": "今晚 22:00-23:00 进行例行维护"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["high", "medium", "low"],
+            "description": "optional · 优先级 · enum: high | medium | low · default: medium",
+            "example": "high"
+          },
+          "target_user": {
+            "type": "string",
+            "description": "optional · 目标用户标识，不传则为全局通知",
+            "example": "admin"
+          }
+        }
+      },
       "CreateEntryRequest": {
         "type": "object",
         "required": ["type", "metadata"],
         "properties": {
           "type": {
             "type": "string",
+            "enum": ["message", "feedback", "notification"],
+            "description": "required · Entry 类型，决定 metadata 的字段结构 · enum: message | feedback | notification",
             "example": "message"
           },
           "metadata": {
-            "type": "object",
-            "description": "Entry-specific data"
+            "description": "required · 随 type 变化的业务字段，见下方各 Metadata schema",
+            "oneOf": [
+              { "$ref": "#/components/schemas/MessageMetadata" },
+              { "$ref": "#/components/schemas/FeedbackMetadata" },
+              { "$ref": "#/components/schemas/NotificationMetadata" }
+            ]
           },
           "source": {
             "type": "string",
+            "description": "optional · 来源标识，例如 homepage、portfolio、mobile",
             "example": "homepage"
           },
           "agent": {
             "type": "string",
-            "description": "User agent string"
+            "description": "optional · 浏览器 User-Agent 字符串",
+            "example": "Mozilla/5.0 ..."
           },
           "tags": {
             "type": "array",
+            "description": "optional · 标签列表",
             "items": {
               "type": "string"
-            }
+            },
+            "example": ["homepage"]
           }
         }
       },
       "UpdateEntryRequest": {
         "type": "object",
+        "description": "所有字段均为 optional，仅传入的字段会被覆盖",
         "properties": {
           "metadata": {
-            "type": "object",
-            "description": "Updated metadata"
+            "description": "optional · 更新后的业务字段，结构与创建时相同",
+            "oneOf": [
+              { "$ref": "#/components/schemas/MessageMetadata" },
+              { "$ref": "#/components/schemas/FeedbackMetadata" },
+              { "$ref": "#/components/schemas/NotificationMetadata" }
+            ]
           },
           "source": {
-            "type": "string"
+            "type": "string",
+            "description": "optional · 来源标识",
+            "example": "mobile"
           },
           "status": {
             "$ref": "#/components/schemas/Status"
           },
           "agent": {
-            "type": "string"
+            "type": "string",
+            "description": "optional · 浏览器 User-Agent 字符串"
           },
           "tags": {
             "type": "array",
+            "description": "optional · 标签列表",
             "items": {
               "type": "string"
-            }
+            },
+            "example": ["important", "reviewed"]
           }
         }
       },
