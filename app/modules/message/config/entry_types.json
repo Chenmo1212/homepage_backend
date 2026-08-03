@@ -93,7 +93,8 @@
       }
     },
     "notification": {
-      "enabled": true
+      "enabled": true,
+      "template": "wechat_notification"
     }
   }
 }
